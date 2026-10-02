@@ -53,10 +53,11 @@ cd mac-task-manager
 # すぐに動かす
 swift run
 
-# .app を作成（/Applications にコピーすれば通常のアプリとして使えます）
-./build_app.sh
-cp -R TaskManager.app /Applications/
+# .app を作成して /Applications にインストール
+./build_app.sh --install
 ```
+
+> ⚠️ `cp -R` で既存の `/Applications/TaskManager.app` に上書きすると、署名が食い違って起動直後に強制終了します。必ず `--install` を使うか、古いアプリを削除してからコピーしてください。
 
 > 自分の Mac でビルドしたアプリは、そのまま警告なしで起動できます。
 
