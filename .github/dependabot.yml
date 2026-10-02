@@ -1,0 +1,9 @@
+# GitHub Actions のバージョンを自動で最新に保つ (セキュリティ更新を含む)
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore

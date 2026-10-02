@@ -10,6 +10,8 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/pimm-k/mac-task-manager/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/pimm-k/mac-task-manager"></a>
+  <a href="https://github.com/pimm-k/mac-task-manager/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/pimm-k/mac-task-manager/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-blue">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9%2B-orange">
   <img alt="License" src="https://img.shields.io/badge/license-Use%20Only%20%2F%20No%20Derivatives-lightgrey">
@@ -36,6 +38,11 @@
 
 - macOS 14 (Sonoma) 以降
 - Xcode または Command Line Tools（`xcode-select --install`）
+
+## ダウンロード
+
+[Releases](https://github.com/pimm-k/mac-task-manager/releases/latest) からビルド済みの `TaskManager-vX.Y.Z.zip` をダウンロードできます。
+Apple の公証を受けていないため、初回は「システム設定」→「プライバシーとセキュリティ」→「このまま開く」で起動を許可してください。
 
 ## ビルドと実行
 
@@ -65,6 +72,9 @@ Sources/TaskManager/
 │   └── LaunchItems.swift     … LaunchAgents / Daemons の読み込みと切り替え
 ├── Views/                    … 各タブの画面
 └── Util/Utilities.swift      … 書式・sysctl・シェル実行
+scripts/release.sh            … リリース (バージョン更新・CHANGELOG・タグ作成)
+.github/workflows/            … CI (自動ビルド) と Release (自動公開)
+VERSION                       … バージョン番号 (唯一の正)
 Resources/
 ├── Info.plist
 ├── AppIcon.icns
@@ -77,6 +87,11 @@ Resources/
 - プロセスごとのネットワーク・GPU 使用量は公開 API がないため表示していません。
 - 「ログイン項目」（SMAppService で登録されたもの）は一覧取得 API がないため、システム設定を開くボタンで対応しています。
 - App Sandbox と両立しない機能を使っているため、Mac App Store では配布していません。
+
+## バージョン管理
+
+- バージョン番号は [セマンティック バージョニング](https://semver.org/lang/ja/) に従い、`VERSION` ファイルで管理しています（アプリのサイドバー下部にも表示）。
+- 変更履歴は [CHANGELOG.md](CHANGELOG.md)、開発とリリースの手順は [CONTRIBUTING.md](CONTRIBUTING.md) をご覧ください。
 
 ## セキュリティ
 

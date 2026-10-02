@@ -82,6 +82,10 @@ private struct SidebarFooter: View {
                 Text("メモリ \(Fmt.percent(m.system.mem.percent))")
                 Text("プロセス \(m.processes.count)")
                 if m.speed == .paused { Text("更新を一時停止中").foregroundStyle(.orange) }
+                Text(AppVersion.display)
+                    .foregroundStyle(.tertiary)
+                    .help("コミット: \(AppVersion.commit ?? "—")")
+                    .padding(.top, 2)
             }
             .font(.caption)
             .foregroundStyle(.secondary)

@@ -1,0 +1,65 @@
+# v1.2.3 のようなタグが push されたら、アプリをビルドして GitHub Releases に公開する
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write   # Release の作成に必要
+
+jobs:
+  release:
+    name: Build & Publish
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: タグと VERSION の一致を確認
+        run: |
+          V="$(tr -d ' \n\r' < VERSION)"
+          if [ "v$V" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::タグ $GITHUB_REF_NAME と VERSION ($V) が一致しません"
+            exit 1
+          fi
+
+      - name: アプリのビルド
+        run: ./build_app.sh --no-open
+
+      - name: zip に固める
+        run: |
+          ZIP="TaskManager-${GITHUB_REF_NAME}.zip"
+          ditto -c -k --keepParent TaskManager.app "$ZIP"
+          shasum -a 256 "$ZIP" > "$ZIP.sha256"
+          cat "$ZIP.sha256"
+
+      - name: リリースノートの作成 (CHANGELOG から抜き出し)
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          awk -v v="$V" 'index($0, "## [" v "]") == 1 {f=1; next} /^## \[/ {f=0} /^\[[^]]+\]: / {next} f' CHANGELOG.md > notes.md
+          {
+            echo ""
+            echo "---"
+            echo "### インストール"
+            echo "1. \`TaskManager-${GITHUB_REF_NAME}.zip\` をダウンロードして展開し、\`TaskManager.app\` を「アプリケーション」フォルダへ移動"
+            echo "2. このアプリは Apple の公証 (notarization) を受けていないため、初回は起動がブロックされます。"
+            echo "   「システム設定」→「プライバシーとセキュリティ」→「このまま開く」で許可してください。"
+            echo ""
+            echo "ダウンロードしたファイルが改ざんされていないかは、\`.sha256\` のハッシュ値で確認できます:"
+            echo "\`shasum -a 256 -c TaskManager-${GITHUB_REF_NAME}.zip.sha256\`"
+          } >> notes.md
+          cat notes.md
+
+      - name: GitHub Release を作成
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "TaskManager-${GITHUB_REF_NAME}.zip" \
+            "TaskManager-${GITHUB_REF_NAME}.zip.sha256" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md \
+            --verify-tag

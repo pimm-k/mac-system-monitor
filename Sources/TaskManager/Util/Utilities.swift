@@ -47,6 +47,23 @@ enum Fmt {
     }
 }
 
+// MARK: - アプリのバージョン (build_app.sh が Info.plist に書き込む)
+
+enum AppVersion {
+    private static func info(_ key: String) -> String? {
+        Bundle.main.object(forInfoDictionaryKey: key) as? String
+    }
+    static var short: String? { info("CFBundleShortVersionString") }
+    static var build: String? { info("CFBundleVersion") }
+    static var commit: String? { info("TMGitCommit") }
+
+    /// 例: "v1.0.0 (12)"。swift run で起動したときは "開発版"
+    static var display: String {
+        guard let s = short else { return "開発版 (swift run)" }
+        return "v\(s) (\(build ?? "-"))"
+    }
+}
+
 // MARK: - sysctl
 
 enum Sysctl {
