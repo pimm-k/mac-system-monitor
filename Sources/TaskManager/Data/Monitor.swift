@@ -4,12 +4,13 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 enum Tab: String, CaseIterable, Identifiable {
-    case processes, performance, startup, users, details
+    case processes, performance, history, startup, users, details
     var id: String { rawValue }
     var title: String {
         switch self {
         case .processes: return "プロセス"
         case .performance: return "パフォーマンス"
+        case .history: return "履歴"
         case .startup: return "スタートアップ アプリ"
         case .users: return "ユーザー"
         case .details: return "詳細"
@@ -19,6 +20,7 @@ enum Tab: String, CaseIterable, Identifiable {
         switch self {
         case .processes: return "square.grid.2x2"
         case .performance: return "waveform.path.ecg"
+        case .history: return "clock.arrow.circlepath"
         case .startup: return "speedometer"
         case .users: return "person.2"
         case .details: return "list.bullet"
@@ -102,6 +104,9 @@ final class Monitor: ObservableObject {
     let staticInfo = StaticInfo.load()
     private let procSampler = ProcessSampler()
     private let sysSampler = SystemSampler()
+    /// バックグラウンド エージェントがないとき、アプリを開いている間だけ履歴を記録する
+    private let recorder = HistoryRecorder()
+    private var recorderTask: Task<Void, Never>?
     private var running = false
 
     var totalThreads: Int { processes.reduce(0) { $0 + $1.threads } }
@@ -111,10 +116,27 @@ final class Monitor: ObservableObject {
     func run() async {
         guard !running else { return }
         running = true
+        startRecorder()
         defer { running = false }
         while !Task.isCancelled {
             if speed != .paused { await tick() }
             try? await Task.sleep(nanoseconds: UInt64(speed.interval * 1_000_000_000))
+        }
+    }
+
+    /// 履歴の記録ループ (5 秒ごと)。エージェントが入っていればそちらに任せる
+    private func startRecorder() {
+        guard recorderTask == nil else { return }
+        let rec = recorder
+        recorderTask = Task.detached(priority: .utility) {
+            while !Task.isCancelled {
+                if RecorderAgent.isInstalled {
+                    rec.release()
+                } else {
+                    rec.tick()
+                }
+                try? await Task.sleep(nanoseconds: UInt64(HistoryRecorder.interval * 1_000_000_000))
+            }
         }
     }
 

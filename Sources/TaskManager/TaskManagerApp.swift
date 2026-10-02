@@ -11,7 +11,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 }
 
+/// エントリーポイント。
+/// `--record` 付きで起動されたら画面を出さずに履歴を記録し続ける (LaunchAgent 用)。
 @main
+enum Entry {
+    @MainActor
+    static func main() {
+        if CommandLine.arguments.contains(HeadlessRecorder.flag) {
+            HeadlessRecorder.run()
+        } else {
+            TaskManagerApp.main()
+        }
+    }
+}
+
 struct TaskManagerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var monitor = Monitor()
