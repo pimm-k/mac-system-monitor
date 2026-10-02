@@ -1,0 +1,85 @@
+<p align="center">
+  <img src="docs/icon.png" width="160" alt="アイコン">
+</p>
+
+<h1 align="center">mac-task-manager</h1>
+
+<p align="center">
+  Windows の「タスク マネージャー」風のシステムモニターを macOS 向けに SwiftUI で作ったアプリです。<br>
+  A Windows Task Manager–style system monitor for macOS, built with SwiftUI.
+</p>
+
+<p align="center">
+  <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-blue">
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9%2B-orange">
+  <img alt="License" src="https://img.shields.io/badge/license-Use%20Only%20%2F%20No%20Derivatives-lightgrey">
+</p>
+
+---
+
+## 機能
+
+| タブ | 内容 |
+|---|---|
+| **プロセス** | 「アプリ」と「バックグラウンド プロセス」に分けて表示。アプリはヘルパー/子プロセスをまとめて合計表示（▶ で展開）。CPU・メモリ・ディスクはヒートマップ色付き |
+| **パフォーマンス** | CPU（全体 / 論理プロセッサごと）・メモリ（構成バー）・ディスク（アクティブ時間 / 転送速度）・ネットワーク（アダプター別、IP / MAC 表示）・GPU のリアルタイムグラフ |
+| **スタートアップ アプリ** | LaunchAgents / LaunchDaemons の一覧と有効化・無効化 |
+| **ユーザー** | ユーザー別の CPU・メモリ・ディスク使用量と、そのユーザーのプロセス |
+| **詳細** | 全プロセスの PID・状態・ユーザー・CPU 時間・スレッド・優先度・パス。優先度の変更、プロセス ツリーの終了 |
+
+- タスクの終了 / 強制終了（Delete キー対応）
+- 新しいタスクを実行（⌘N）
+- タブ切り替え（⌘1〜⌘5）、検索、更新速度の変更、常に手前に表示
+- root など他ユーザーのプロセスの操作は、確認後に管理者パスワードで実行
+
+## 動作環境
+
+- macOS 14 (Sonoma) 以降
+- Xcode または Command Line Tools（`xcode-select --install`）
+
+## ビルドと実行
+
+```bash
+git clone https://github.com/pimm-k/mac-task-manager.git
+cd mac-task-manager
+
+# すぐに動かす
+swift run
+
+# .app を作成（/Applications にコピーすれば通常のアプリとして使えます）
+./build_app.sh
+cp -R TaskManager.app /Applications/
+```
+
+> 自分の Mac でビルドしたアプリは、そのまま警告なしで起動できます。
+
+## プロジェクト構成
+
+```
+Sources/TaskManager/
+├── TaskManagerApp.swift      … エントリーポイント
+├── Data/
+│   ├── Monitor.swift         … 定期更新・履歴・終了などの操作
+│   ├── ProcessSampler.swift  … libproc でプロセス情報を取得
+│   ├── SystemSampler.swift   … CPU / メモリ / ディスク(IOKit) / ネットワーク / GPU
+│   └── LaunchItems.swift     … LaunchAgents / Daemons の読み込みと切り替え
+├── Views/                    … 各タブの画面
+└── Util/Utilities.swift      … 書式・sysctl・シェル実行
+Resources/
+├── Info.plist
+├── AppIcon.icns
+└── icon/                     … アイコン原画と生成スクリプト
+```
+
+## 制限事項
+
+- 他ユーザー（root）のプロセスは macOS の権限上、詳細を取得できないため CPU 時間・メモリを `ps` から取得しています（スレッド数は「—」表示）。
+- プロセスごとのネットワーク・GPU 使用量は公開 API がないため表示していません。
+- 「ログイン項目」（SMAppService で登録されたもの）は一覧取得 API がないため、システム設定を開くボタンで対応しています。
+- App Sandbox と両立しない機能を使っているため、Mac App Store では配布していません。
+
+## ライセンス
+
+使用・無改変での再配布は自由ですが、**改変および改変版の配布は禁止**です。詳しくは [LICENSE](LICENSE) をご覧ください。
+
+本プロジェクトは Microsoft とは関係のない個人制作のアプリです。「タスク マネージャー」は Windows の同名機能を参考にした呼び名です。

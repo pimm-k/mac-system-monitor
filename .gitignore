@@ -1,0 +1,15 @@
+# ビルド成果物
+.build/
+.swiftpm/
+TaskManager.app/
+*.xcodeproj/
+DerivedData/
+
+# macOS
+.DS_Store
+
+# 秘密情報 (絶対にコミットしない)
+.github_token
+*.token
+.env
+.github-token

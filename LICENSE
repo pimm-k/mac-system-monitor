@@ -1,0 +1,45 @@
+mac-task-manager License (Use Only / No Derivatives)
+
+Copyright (c) 2026 pimm-k
+All rights reserved.
+
+【日本語】
+1. 利用の許可
+   本ソフトウェア（ソースコード、ビルドしたアプリ、アイコン等を含む）を、
+   個人・商用を問わず無償で使用（ビルド・実行）することを許可します。
+
+2. 再配布
+   本ソフトウェアを「改変せずに」再配布することは、この LICENSE ファイルと
+   著作権表示を含める場合に限り許可します。
+
+3. 禁止事項
+   著作権者の書面による許可なく、次の行為を禁止します。
+   (a) 本ソフトウェアを改変すること（個人的な動作確認のための一時的な変更を除く）
+   (b) 改変したもの、または本ソフトウェアを元にした派生物を配布・公開すること
+   (c) ソースコードやアイコンの全部または一部を、他のソフトウェアに流用すること
+   (d) 本ソフトウェアを自作であると偽ること
+
+4. 無保証
+   本ソフトウェアは「現状のまま」提供され、明示・黙示を問わず一切の保証は
+   ありません。本ソフトウェアの使用により生じたいかなる損害についても、
+   著作権者は責任を負いません。
+
+5. GitHub 上の Fork について
+   GitHub の利用規約により、GitHub 上での閲覧および Fork は可能ですが、
+   Fork したリポジトリにも本ライセンスが適用されます。
+
+[English]
+1. Permission to use: You may build and run this software, free of charge,
+   for personal or commercial purposes.
+2. Redistribution: You may redistribute UNMODIFIED copies only, provided that
+   this LICENSE file and the copyright notice are included.
+3. Prohibited without prior written permission from the copyright holder:
+   (a) modifying this software (except temporary local changes for testing),
+   (b) distributing or publishing modified versions or derivative works,
+   (c) reusing all or part of the source code or icon in other software,
+   (d) claiming this software as your own work.
+4. No warranty: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+5. Forks on GitHub: Viewing and forking on GitHub are permitted under GitHub's
+   Terms of Service; this license continues to apply to any fork.

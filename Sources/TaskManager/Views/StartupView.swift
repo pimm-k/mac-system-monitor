@@ -1,0 +1,138 @@
+import SwiftUI
+import AppKit
+
+@MainActor
+struct StartupView: View {
+    @EnvironmentObject private var m: Monitor
+    let search: String
+
+    @StateObject private var itemsBox = Box<[LaunchItem]>([])
+
+    private var items: [LaunchItem] {
+
+        get { itemsBox.value }
+
+        nonmutating set { itemsBox.value = newValue }
+
+    }
+    @StateObject private var selectionBox = Box<Set<String>>([])
+    private var selection: Set<String> {
+        get { selectionBox.value }
+        nonmutating set { selectionBox.value = newValue }
+    }
+    @StateObject private var sortOrderBox = Box<[KeyPathComparator<LaunchItem>]>([KeyPathComparator(\.label)])
+    private var sortOrder: [KeyPathComparator<LaunchItem>] {
+        get { sortOrderBox.value }
+        nonmutating set { sortOrderBox.value = newValue }
+    }
+    @StateObject private var loadingBox = Box<Bool>(false)
+    private var loading: Bool {
+        get { loadingBox.value }
+        nonmutating set { loadingBox.value = newValue }
+    }
+
+    private var rows: [LaunchItem] {
+        let q = search.lowercased()
+        let filtered = q.isEmpty ? items : items.filter {
+            $0.label.lowercased().contains(q) || $0.program.lowercased().contains(q)
+        }
+        return filtered.sorted(using: sortOrder)
+    }
+
+    private var selectedItems: [LaunchItem] { items.filter { selection.contains($0.id) } }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("ログイン時やシステム起動時に自動で実行される LaunchAgents / LaunchDaemons")
+                    .font(.callout).foregroundStyle(.secondary)
+                Spacer()
+                if loading { ProgressView().controlSize(.small) }
+                Text("\(items.filter { !$0.disabled }.count) 件 有効 / 全 \(items.count) 件")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 8)
+            Divider()
+
+            Table(rows, selection: $selectionBox.value, sortOrder: $sortOrderBox.value) {
+                TableColumn("名前", value: \.label) { item in
+                    HStack(spacing: 6) {
+                        Image(nsImage: IconCache.shared.icon(path: item.program, bundlePath: nil))
+                            .resizable().frame(width: 16, height: 16)
+                        Text(item.label).lineLimit(1)
+                    }
+                }
+                .width(min: 220, ideal: 300)
+                TableColumn("発行元", value: \.publisher).width(min: 70, ideal: 100)
+                TableColumn("種類", value: \.kindName).width(min: 90, ideal: 130)
+                TableColumn("状態", value: \.statusText) { item in
+                    Text(item.statusText).foregroundStyle(item.disabled ? Color.secondary : Color.primary)
+                }
+                .width(min: 40, ideal: 50)
+                TableColumn("実行状況", value: \.runningText).width(min: 50, ideal: 60)
+                TableColumn("自動起動", value: \.runAtLoadText).width(min: 50, ideal: 60)
+                TableColumn("プログラム", value: \.program) { item in
+                    Text(item.program).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                }
+            }
+            .contextMenu(forSelectionType: String.self) { ids in
+                let targets = items.filter { ids.contains($0.id) }
+                if let first = targets.first {
+                    if first.disabled {
+                        Button("有効化") { setEnabled(targets, true) }
+                    } else {
+                        Button("無効化") { setEnabled(targets, false) }
+                    }
+                    Divider()
+                    Button("plist を Finder で表示") {
+                        NSWorkspace.shared.activateFileViewerSelecting(targets.map { URL(fileURLWithPath: $0.path) })
+                    }
+                    Button("プログラムの場所を開く") { m.revealInFinder(path: first.program) }
+                    Button("plist を開く") { NSWorkspace.shared.open(URL(fileURLWithPath: first.path)) }
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") {
+                        NSWorkspace.shared.open(url)
+                    }
+                } label: { Label("ログイン項目設定", systemImage: "gearshape") }
+                .help("システム設定の「ログイン項目」を開く")
+                Button { Task { await reload() } } label: { Label("再読み込み", systemImage: "arrow.clockwise") }
+                Button { setEnabled(selectedItems, true) } label: { Label("有効化", systemImage: "checkmark.circle") }
+                    .disabled(selectedItems.isEmpty)
+                Button { setEnabled(selectedItems, false) } label: { Label("無効化", systemImage: "nosign") }
+                    .disabled(selectedItems.isEmpty)
+            }
+        }
+        .task { await reload() }
+    }
+
+    private func reload() async {
+        loading = true
+        let paths = Set(m.processes.map(\.path))
+        items = await Task.detached(priority: .userInitiated) {
+            LaunchItemLoader.load(runningPaths: paths)
+        }.value
+        loading = false
+    }
+
+    private func setEnabled(_ targets: [LaunchItem], _ enabled: Bool) {
+        Task {
+            var adminCommands: [String] = []
+            for t in targets {
+                let r = await Task.detached { LaunchItemLoader.setEnabled(t, enabled: enabled) }.value
+                if !r.ok, let cmd = r.adminCommand { adminCommands.append(cmd) }
+            }
+            if !adminCommands.isEmpty {
+                m.alert = AlertInfo(
+                    title: "管理者権限が必要です",
+                    message: "システム デーモンなどの変更には管理者パスワードが必要です。実行しますか？",
+                    adminCommand: adminCommands.joined(separator: "; "))
+            }
+            await reload()
+        }
+    }
+}
