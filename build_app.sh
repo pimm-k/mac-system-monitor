@@ -21,8 +21,9 @@ if [ -f Resources/AppIcon.icns ]; then
   cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 fi
 
-# アドホック署名 (ローカル実行用)
-codesign --force --deep --sign - "$APP" >/dev/null 2>&1 || true
+# アドホック署名 + Hardened Runtime (コード注入・デバッガのアタッチ等を防ぐ)
+codesign --force --options runtime --timestamp=none --sign - "$APP"
+codesign --verify --strict "$APP" && echo "▶ 署名を確認しました (Hardened Runtime 有効)"
 
 # Finder/Dock にアイコンの更新を知らせる
 touch "$APP"

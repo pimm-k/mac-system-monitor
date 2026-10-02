@@ -141,7 +141,15 @@ final class Monitor: ObservableObject {
     func endTask(pids: [pid_t], force: Bool, preferApp: Bool = true) {
         var denied: [pid_t] = []
         var errors: [String] = []
+        var replaced: [pid_t] = []
+        var expected: [pid_t: String] = [:]
+        for p in processes { expected[p.pid] = p.path }
         for pid in pids where pid > 0 {
+            // PID 再利用対策: 一覧に出ていたプロセスと同じか確認してから終了する
+            guard ProcIdentity.matches(pid: pid, expectedPath: expected[pid]) else {
+                replaced.append(pid)
+                continue
+            }
             if preferApp, let app = NSRunningApplication(processIdentifier: pid), app.activationPolicy == .regular {
                 _ = force ? app.forceTerminate() : app.terminate()
                 continue
@@ -153,10 +161,21 @@ final class Monitor: ObservableObject {
         }
         if !denied.isEmpty {
             let list = denied.map { String($0) }.joined(separator: " ")
+            let sig = force ? 9 : 15
+            // 承認されるまでに PID が入れ替わっても別プロセスを終了しないよう、実行直前に再確認する
+            let cmds = denied.compactMap { ProcIdentity.guarded(pid: $0, command: "/bin/kill -\(sig) \($0)") }
+            if cmds.isEmpty {
+                alert = AlertInfo(title: "タスクを終了できませんでした", message: "対象のプロセスはすでに終了しています。")
+            } else {
+                alert = AlertInfo(
+                    title: "アクセスが拒否されました",
+                    message: "PID \(list) は別のユーザー (root など) のプロセスです。管理者として終了しますか？",
+                    adminCommand: cmds.joined(separator: "; "))
+            }
+        } else if !replaced.isEmpty {
             alert = AlertInfo(
-                title: "アクセスが拒否されました",
-                message: "PID \(list) は別のユーザー (root など) のプロセスです。管理者として終了しますか？",
-                adminCommand: "kill -\(force ? 9 : 15) \(list)")
+                title: "タスクを終了しませんでした",
+                message: "PID \(replaced.map { String($0) }.joined(separator: " ")) は一覧の表示後に別のプロセスへ入れ替わったため、安全のため終了を中止しました。")
         } else if !errors.isEmpty {
             alert = AlertInfo(title: "タスクを終了できませんでした", message: errors.joined(separator: "\n"))
         }
@@ -178,11 +197,18 @@ final class Monitor: ObservableObject {
     }
 
     func setPriority(pid: pid_t, nice: Int32) {
+        let expected = processes.first(where: { $0.pid == pid })?.path
+        guard ProcIdentity.matches(pid: pid, expectedPath: expected) else {
+            alert = AlertInfo(title: "優先度を変更しませんでした",
+                              message: "PID \(pid) は別のプロセスへ入れ替わったため、変更を中止しました。")
+            return
+        }
         if setpriority(PRIO_PROCESS, id_t(pid), nice) != 0 {
+            guard let cmd = ProcIdentity.guarded(pid: pid, command: "/usr/bin/renice -n \(nice) -p \(pid)") else { return }
             alert = AlertInfo(
                 title: "優先度を変更できません",
                 message: "優先度を上げる、または他ユーザーのプロセスを変更するには管理者権限が必要です。",
-                adminCommand: "renice -n \(nice) -p \(pid)")
+                adminCommand: cmd)
         }
     }
 

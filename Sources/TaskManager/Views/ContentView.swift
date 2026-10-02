@@ -61,7 +61,11 @@ struct ContentView: View {
                 Button("OK", role: .cancel) {}
             }
         } message: { info in
-            Text(info.message)
+            if let cmd = info.adminCommand {
+                Text(info.message + "\n\n管理者 (root) として次のコマンドを実行します:\n" + cmd)
+            } else {
+                Text(info.message)
+            }
         }
         .task { await m.run() }
     }

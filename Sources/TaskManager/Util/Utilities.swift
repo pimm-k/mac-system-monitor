@@ -73,6 +73,37 @@ func tupleString<T>(_ value: T) -> String {
     }
 }
 
+// MARK: - プロセスの同一性確認 (PID 再利用対策)
+
+enum ProcIdentity {
+    /// 実行ファイルのパス (取得できなければ空文字)
+    static func path(_ pid: pid_t) -> String {
+        var buf = [UInt8](repeating: 0, count: 4096)
+        let len = proc_pidpath(pid, &buf, UInt32(buf.count))
+        guard len > 0 else { return "" }
+        return String(decoding: buf.prefix(Int(len)), as: UTF8.self)
+    }
+
+    /// 一覧に表示していたプロセスと、今その PID で動いているプロセスが同じか
+    static func matches(pid: pid_t, expectedPath: String?) -> Bool {
+        guard let expected = expectedPath, !expected.isEmpty else { return true }
+        return path(pid) == expected
+    }
+
+    /// ps が表示するコマンド名 (管理者コマンド内での再確認用)
+    static func psComm(_ pid: pid_t) -> String? {
+        let r = Shell.run("/bin/ps", ["-p", String(pid), "-o", "comm="])
+        let s = r.out.trimmingCharacters(in: .whitespacesAndNewlines)
+        return r.status == 0 && !s.isEmpty ? s : nil
+    }
+
+    /// 「実行直前にまだ同じプロセスなら実行する」シェル断片を作る
+    static func guarded(pid: pid_t, command: String) -> String? {
+        guard let comm = psComm(pid) else { return nil }
+        return "[ \"$(/bin/ps -p \(pid) -o comm=)\" = \(Shell.quote(comm)) ] && \(command)"
+    }
+}
+
 // MARK: - シェル実行
 
 enum Shell {
