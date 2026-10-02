@@ -1,13 +1,18 @@
 #!/bin/bash
 # TaskManager.app をビルドして同じフォルダに作成します
-#   使い方:  ./build_app.sh          (作成後、自動で起動)
-#            ./build_app.sh --no-open (起動しない / CI 用)
+#   使い方:  ./build_app.sh            (作成後、自動で起動)
+#            ./build_app.sh --install  (/Applications に安全にインストールして起動)
+#            ./build_app.sh --no-open  (起動しない / CI 用)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 APP="TaskManager.app"
 OPEN_APP=1
-[ "${1:-}" = "--no-open" ] && OPEN_APP=0
+INSTALL=0
+case "${1:-}" in
+  --no-open) OPEN_APP=0 ;;
+  --install) INSTALL=1 ;;
+esac
 [ -n "${CI:-}" ] && OPEN_APP=0
 
 # --- バージョン情報 (VERSION ファイルが唯一の正)
@@ -52,7 +57,25 @@ codesign --verify --strict "$APP" && echo "▶ 署名を確認しました (Hard
 touch "$APP"
 
 echo "✅ 完了: $(pwd)/$APP  (v$VERSION build $BUILD)"
-if [ "$OPEN_APP" = 1 ]; then
-  echo "   /Applications にコピーすれば通常のアプリとして使えます。"
+
+if [ "$INSTALL" = 1 ]; then
+  DEST="/Applications/$APP"
+  echo "▶ $DEST にインストール中..."
+  # 起動中なら終了させる (起動していないときに quit を送ると逆に起動してしまうので確認してから)
+  if pgrep -f "$DEST/Contents/MacOS/TaskManager" >/dev/null 2>&1; then
+    osascript -e 'tell application id "local.pim.taskmanager" to quit' >/dev/null 2>&1 || true
+    sleep 1
+    pkill -f "$DEST/Contents/MacOS/TaskManager" 2>/dev/null || true
+  fi
+  # 重要: 既存のアプリに上書きコピー (cp -R) すると、署名のキャッシュと中身が食い違い
+  #       "Code Signature Invalid" で起動直後に強制終了される。必ず削除してから新規にコピーする。
+  rm -rf "$DEST"
+  ditto "$APP" "$DEST"
+  codesign --verify --strict "$DEST"
+  echo "✅ インストールしました: $DEST"
+  if [ "$OPEN_APP" = 1 ]; then open "$DEST"; fi
+elif [ "$OPEN_APP" = 1 ]; then
+  echo "   /Applications に入れるときは ./build_app.sh --install を使ってください。"
+  echo "   (cp -R で上書きすると起動できなくなります)"
   open "$APP"
 fi
