@@ -71,7 +71,25 @@ final class Monitor: ObservableObject {
     @Published private(set) var netTxHistory: [String: [Double]] = [:]
     @Published private(set) var gpuHistory: [Double] = []
 
-    @Published var tab: Tab? = .processes
+    // MARK: 前回の表示状態 (次回起動時に復元する)
+    private enum Keys {
+        static let tab = "lastTab"
+        static let perfItem = "lastPerformanceItem"
+        static let cpuGraphMode = "cpuGraphMode"
+    }
+
+    /// 選択中のタブ
+    @Published var tab: Tab? = Tab(rawValue: UserDefaults.standard.string(forKey: Keys.tab) ?? "") ?? .processes {
+        didSet { UserDefaults.standard.set((tab ?? .processes).rawValue, forKey: Keys.tab) }
+    }
+    /// パフォーマンス タブで選択中の項目 (CPU / メモリ / ...)
+    @Published var perfItem: PerfItem = PerfItem(key: UserDefaults.standard.string(forKey: Keys.perfItem) ?? "") {
+        didSet { UserDefaults.standard.set(perfItem.key, forKey: Keys.perfItem) }
+    }
+    /// CPU グラフの表示モード (全体 / 論理プロセッサ)
+    @Published var cpuGraphMode: CPUGraphMode = CPUGraphMode(rawValue: UserDefaults.standard.string(forKey: Keys.cpuGraphMode) ?? "") ?? .overall {
+        didSet { UserDefaults.standard.set(cpuGraphMode.rawValue, forKey: Keys.cpuGraphMode) }
+    }
     @Published var focusPid: pid_t? = nil
     @Published var speed: UpdateSpeed = .normal
     @Published var alert: AlertInfo? = nil
