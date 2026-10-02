@@ -2,6 +2,31 @@ import SwiftUI
 
 enum PerfItem: Hashable {
     case cpu, memory, disk, network(String), gpu
+
+    /// 保存用の文字列 (例: "cpu", "network:en0")
+    var key: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .memory: return "memory"
+        case .disk: return "disk"
+        case .network(let id): return "network:" + id
+        case .gpu: return "gpu"
+        }
+    }
+
+    init(key: String) {
+        switch key {
+        case "memory": self = .memory
+        case "disk": self = .disk
+        case "gpu": self = .gpu
+        default:
+            if key.hasPrefix("network:") {
+                self = .network(String(key.dropFirst("network:".count)))
+            } else {
+                self = .cpu
+            }
+        }
+    }
 }
 
 enum CPUGraphMode: String, CaseIterable, Identifiable {
@@ -18,16 +43,15 @@ enum CPUGraphMode: String, CaseIterable, Identifiable {
 @MainActor
 struct PerformanceView: View {
     @EnvironmentObject private var m: Monitor
-    @StateObject private var selectedBox = Box<PerfItem>(.cpu)
+    /// 選択中の項目 (Monitor 経由で保存され、次回起動時に復元される)
     private var selected: PerfItem {
-        get { selectedBox.value }
-        nonmutating set { selectedBox.value = newValue }
+        get { m.perfItem }
+        nonmutating set { m.perfItem = newValue }
     }
     /// CPU グラフの表示モード (全体 / 論理プロセッサ)
-    @StateObject private var cpuModeBox = Box<CPUGraphMode>(.overall)
     private var cpuMode: CPUGraphMode {
-        get { cpuModeBox.value }
-        nonmutating set { cpuModeBox.value = newValue }
+        get { m.cpuGraphMode }
+        nonmutating set { m.cpuGraphMode = newValue }
     }
 
     var body: some View {
@@ -128,7 +152,7 @@ struct PerformanceView: View {
 
             // グラフの切り替え
             HStack(spacing: 12) {
-                Picker("グラフの変更", selection: $cpuModeBox.value) {
+                Picker("グラフの変更", selection: $m.cpuGraphMode) {
                     ForEach(CPUGraphMode.allCases) { mode in Text(mode.title).tag(mode) }
                 }
                 .pickerStyle(.segmented)
