@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-03
+
 ### 追加
 - 前回開いていたタブ（プロセス / パフォーマンス など）を、次回起動時にそのまま開くように
 - パフォーマンス タブで選んでいた項目（CPU / メモリ / ディスク / ネットワーク / GPU）を記憶
@@ -38,5 +40,6 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/pimm-k/mac-task-manager/releases/tag/v1.0.0
