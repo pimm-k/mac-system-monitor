@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-04
+
 ### 追加
 - **履歴タブ**：以前の動きを確認できるように
   - 推移グラフ：CPU・メモリ・ディスク・ネットワーク・GPU を 1 時間〜30 日の期間で表示（マウスを乗せるとその時刻の値を表示）
@@ -61,6 +63,7 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/pimm-k/mac-task-manager/releases/tag/v1.0.0
