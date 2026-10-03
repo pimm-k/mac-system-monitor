@@ -106,7 +106,7 @@ Resources/
 
 ## セキュリティ
 
-ネットワーク通信なし・外部ライブラリなしの構成です。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
+ネットワーク通信なし・外部ライブラリなしの構成です。GitHub の CodeQL・Secret scanning に加え、コミット前と GitHub Actions で gitleaks による秘密情報の検査を行っています。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
 
 ## ライセンス
 

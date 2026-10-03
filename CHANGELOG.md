@@ -20,6 +20,11 @@
 - 履歴の保存期間：5 秒ごとのデータは 24 時間、1 分ごとのまとめ・アプリ別・ログは 30 日
 - `./build_app.sh --install` 時に、バックグラウンド記録を新しいアプリで自動再起動
 
+### セキュリティ
+- CodeQL による静的解析（Pull Request ごと・毎週）を追加
+- gitleaks による秘密情報の検査を追加（GitHub Actions で Pull Request ごと・毎週、手元ではコミット前フック）
+- 脆弱性情報の週次チェックの運用と、構成要素の一覧（docs/security/components.md）を追加
+
 ### 変更
 - README に免責事項と商標についての表記を追加
 
