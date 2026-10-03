@@ -73,6 +73,13 @@ if [ "$INSTALL" = 1 ]; then
   ditto "$APP" "$DEST"
   codesign --verify --strict "$DEST"
   echo "✅ インストールしました: $DEST"
+  # バックグラウンド記録 (LaunchAgent) を使っていれば新しいアプリで再起動する
+  AGENT="local.pim.taskmanager.recorder"
+  if [ -f "$HOME/Library/LaunchAgents/$AGENT.plist" ]; then
+    launchctl kickstart -k "gui/$(id -u)/$AGENT" >/dev/null 2>&1 \
+      || launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$AGENT.plist" >/dev/null 2>&1 || true
+    echo "▶ バックグラウンド記録を再起動しました"
+  fi
   if [ "$OPEN_APP" = 1 ]; then open "$DEST"; fi
 elif [ "$OPEN_APP" = 1 ]; then
   echo "   /Applications に入れるときは ./build_app.sh --install を使ってください。"

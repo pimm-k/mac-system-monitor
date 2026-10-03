@@ -29,6 +29,7 @@ struct ContentView: View {
                 switch m.tab ?? .processes {
                 case .processes: ProcessesView(search: search)
                 case .performance: PerformanceView()
+                case .history: HistoryView(search: search)
                 case .startup: StartupView(search: search)
                 case .users: UsersView(search: search)
                 case .details: DetailsView(search: search)
