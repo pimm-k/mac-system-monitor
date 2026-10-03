@@ -31,3 +31,20 @@ and your macOS version.
 - **PID 再利用対策**：プロセスを終了・変更する直前に、一覧に表示していたプロセスと同一か（実行ファイルのパス）を確認します。管理者権限での実行時も、実行直前に再確認します。
 - **Hardened Runtime**：`build_app.sh` で Hardened Runtime を有効にして署名します。
 - **App Sandbox は未使用**：プロセスの終了や LaunchDaemons の操作に必要なため、意図的に無効です。
+
+## 脆弱性情報への対応（運用）
+
+| 仕組み | 内容 |
+|---|---|
+| **週次チェック** | 毎週月曜の朝、JVN・NVD・Apple セキュリティアップデート・GitHub Advisory の新しい情報を確認し、[構成要素の一覧](docs/security/components.md) と照らして影響を判断します |
+| **CodeQL** | Pull Request ごと・毎週、自分のコードを静的解析します（Security タブ → Code scanning） |
+| **Dependabot** | GitHub Actions のバージョンを毎月確認し、更新の Pull Request を作成します |
+
+影響がある場合の流れ：
+
+1. `security/<識別子>` ブランチで修正（例：`security/CVE-2026-12345`）
+2. CHANGELOG の `### セキュリティ` に記載
+3. Pull Request → CI・CodeQL が通ったらマージ
+4. PATCH バージョンを上げてリリース（例：`./scripts/release.sh 1.2.1 --push`）
+
+macOS 自体の脆弱性（カーネルなど）でアプリ側では直せないものは、README などで macOS のアップデートを案内します。

@@ -18,6 +18,7 @@ main ──●────────●──────────●──
 | `fix/` | バグ修正 | `fix/cpu-graph-overflow` |
 | `docs/` | ドキュメントのみ | `docs/readme-screenshots` |
 | `chore/` | ビルド・設定・依存関係など | `chore/update-actions` |
+| `security/` | 脆弱性の修正 | `security/CVE-2026-12345` |
 
 ### 作業の流れ
 

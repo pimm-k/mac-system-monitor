@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+### セキュリティ
+- CodeQL による静的解析（Pull Request ごと・毎週）を追加
+- 脆弱性情報の週次チェックの運用と、構成要素の一覧（docs/security/components.md）を追加
+
 ### 変更
 - README に免責事項と商標についての表記を追加
 
