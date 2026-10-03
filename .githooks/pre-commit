@@ -1,0 +1,24 @@
+#!/bin/sh
+# コミット前に、トークン・パスワードなどの秘密情報が含まれていないかを gitleaks で確認する
+# 有効化: ./scripts/setup-hooks.sh   (一時的に飛ばす: git commit --no-verify)
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "⚠️  gitleaks が見つからないため、秘密情報のチェックを飛ばしました (brew install gitleaks)"
+  exit 0
+fi
+
+if gitleaks git --help >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --no-banner
+else
+  gitleaks protect --staged --redact --no-banner   # 古い gitleaks 用
+fi
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "❌ 秘密情報らしき文字列が見つかったため、コミットを中止しました。"
+  echo "   該当箇所を削除してから、もう一度コミットしてください。"
+  echo "   (誤検知の場合は .gitleaksignore に追加できます)"
+  exit 1
+fi
+exit 0

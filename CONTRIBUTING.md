@@ -1,5 +1,12 @@
 # 開発・リリースのルール
 
+## 最初の準備（clone した後に 1 回）
+
+```bash
+brew install gitleaks        # 秘密情報の検出ツール
+./scripts/setup-hooks.sh     # コミット前に自動で検査するフックを有効化
+```
+
 ## ブランチ運用（GitHub Flow）
 
 ```
@@ -18,6 +25,7 @@ main ──●────────●──────────●──
 | `fix/` | バグ修正 | `fix/cpu-graph-overflow` |
 | `docs/` | ドキュメントのみ | `docs/readme-screenshots` |
 | `chore/` | ビルド・設定・依存関係など | `chore/update-actions` |
+| `security/` | 脆弱性の修正 | `security/CVE-2026-12345` |
 
 ### 作業の流れ
 
@@ -76,7 +84,7 @@ GitHub の **Settings → Rules → Rulesets → New branch ruleset** で以下�
 - ✅ Restrict deletions
 - ✅ Block force pushes
 - ✅ Require a pull request before merging
-- ✅ Require status checks to pass → `Build (macOS)` を追加
+- ✅ Require status checks to pass → `Build (macOS)`・`Analyze (Swift)`・`Secret scan (gitleaks)` を追加
 
 ## 外部からの貢献について
 

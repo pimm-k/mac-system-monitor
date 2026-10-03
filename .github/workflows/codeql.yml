@@ -1,0 +1,43 @@
+# CodeQL: 自分のコードに脆弱性になりうる書き方がないかを静的解析する
+# 結果は GitHub の Security タブ → Code scanning に表示される
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '23 18 * * 0'   # 毎週月曜 3:23 (日本時間)
+
+permissions:
+  contents: read
+  security-events: write   # 解析結果のアップロードに必要
+  actions: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (Swift)
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: CodeQL の初期化
+        uses: github/codeql-action/init@v3
+        with:
+          languages: swift
+          build-mode: manual
+          queries: security-extended   # 標準より多くのセキュリティ ルールで検査
+
+      - name: ビルド (解析対象)
+        run: swift build
+
+      - name: CodeQL で解析
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:swift"

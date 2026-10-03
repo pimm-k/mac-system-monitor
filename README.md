@@ -96,10 +96,19 @@ Resources/
 
 ## セキュリティ
 
-ネットワーク通信なし・外部ライブラリなしの構成です。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
+ネットワーク通信なし・外部ライブラリなしの構成です。GitHub の CodeQL・Secret scanning に加え、コミット前と GitHub Actions で gitleaks による秘密情報の検査を行っています。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
 
 ## ライセンス
 
 使用・無改変での再配布は自由ですが、**改変および改変版の配布は禁止**です。詳しくは [LICENSE](LICENSE) をご覧ください。
 
-本プロジェクトは Microsoft とは関係のない個人制作のアプリです。「タスク マネージャー」は Windows の同名機能を参考にした呼び名です。
+## 免責事項・商標について
+
+- 本プロジェクトは個人制作のアプリであり、Microsoft Corporation とは一切関係がなく、同社による承認・提携・後援を受けたものではありません。
+- 本アプリは Windows の「タスク マネージャー」の機能や使い勝手を**参考にして独自に開発**したものです。Microsoft のソースコード、アイコン、画像などの素材は一切使用していません。
+- 「タスク マネージャー」という呼び名は、Windows の同名機能を参考にした説明的な名称です。
+- Microsoft、Windows は、米国 Microsoft Corporation の米国およびその他の国における登録商標または商標です。
+- macOS、Mac は、米国およびその他の国で登録された Apple Inc. の商標です。
+- その他、記載されている会社名・製品名は、各社の商標または登録商標です。
+
+*This is an independent project and is not affiliated with, endorsed by, or sponsored by Microsoft Corporation. Windows is a registered trademark of Microsoft Corporation in the United States and other countries. macOS and Mac are trademarks of Apple Inc.*
