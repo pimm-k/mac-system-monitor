@@ -66,9 +66,13 @@ echo "$NOTES" | sed 's/^/  /'
 echo
 
 if [ "$PUSH" = 1 ]; then
-  git push origin main --follow-tags
+  # main とタグを同時に push すると Release ワークフローが起動しないことがあるため、別々に送る
+  git push origin main
+  sleep 3
+  git push origin "$TAG"
   echo "🚀 push しました。GitHub Actions がビルドして Releases に公開します。"
+  echo "   進み具合: gh run watch  /  結果: gh release view $TAG"
 else
   echo "GitHub に公開するには:"
-  echo "  git push origin main --follow-tags"
+  echo "  git push origin main && git push origin $TAG"
 fi
