@@ -12,6 +12,7 @@
 
 ### セキュリティ
 - CodeQL による静的解析（Pull Request ごと・毎週）を追加
+- gitleaks による秘密情報の検査を追加（GitHub Actions で Pull Request ごと・毎週、手元ではコミット前フック）
 - 脆弱性情報の週次チェックの運用と、構成要素の一覧（docs/security/components.md）を追加
 
 ### 変更

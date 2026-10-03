@@ -38,13 +38,16 @@ and your macOS version.
 |---|---|
 | **週次チェック** | 毎週月曜の朝、JVN・NVD・Apple セキュリティアップデート・GitHub Advisory の新しい情報を確認し、[構成要素の一覧](docs/security/components.md) と照らして影響を判断します |
 | **CodeQL** | Pull Request ごと・毎週、自分のコードを静的解析します（Security タブ → Code scanning） |
-| **Dependabot** | GitHub Actions のバージョンを毎月確認し、更新の Pull Request を作成します |
+| **Secret scanning / Push protection** | GitHub がトークンなどの秘密情報の push を検知・ブロックします |
+| **gitleaks（GitHub Actions）** | Pull Request ごと・毎週、トークンやパスワードなどの秘密情報がコミットされていないかを全履歴で検査します |
+| **gitleaks（コミット前フック）** | 手元でコミットする前に同じ検査を行い、見つかればコミットを中止します（`./scripts/setup-hooks.sh` で有効化） |
+| **Dependabot** | 脆弱性アラートを有効化済み。GitHub Actions のバージョンを毎月確認し、更新の Pull Request を作成します |
 
 影響がある場合の流れ：
 
 1. `security/<識別子>` ブランチで修正（例：`security/CVE-2026-12345`）
 2. CHANGELOG の `### セキュリティ` に記載
-3. Pull Request → CI・CodeQL が通ったらマージ
+3. Pull Request → CI・CodeQL・Secrets チェックが通ったらマージ
 4. PATCH バージョンを上げてリリース（例：`./scripts/release.sh 1.2.1 --push`）
 
 macOS 自体の脆弱性（カーネルなど）でアプリ側では直せないものは、README などで macOS のアップデートを案内します。

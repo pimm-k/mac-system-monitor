@@ -30,9 +30,11 @@
 
 | アクション / ランナー | ワークフロー |
 |---|---|
-| `actions/checkout@v4` | ci / release / codeql |
+| `actions/checkout@v4` | ci / release / codeql / secrets |
 | `github/codeql-action/*@v3` | codeql |
+| `ghcr.io/gitleaks/gitleaks:latest`（Docker イメージ） | secrets |
 | `macos-15` ランナー | ci / release / codeql |
+| `ubuntu-latest` ランナー | secrets |
 | `gh` CLI（ランナー同梱） | release |
 
 ## 4. 外部ライブラリ（Swift Package）
