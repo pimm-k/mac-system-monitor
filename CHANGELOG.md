@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-10-04
+
 ### 変更
 - 履歴の削除で、削除する種類（推移グラフ・アプリの履歴・高負荷の記録・通信の警告・起動・終了ログ）を選べるようにした。各種類の件数も表示
 
@@ -121,7 +123,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...v2.0.0
 [1.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.1...v1.4.2
