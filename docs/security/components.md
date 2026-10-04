@@ -17,6 +17,10 @@
 | `/usr/bin/osascript`（`do shell script … with administrator privileges`） | `Monitor.swift` | 管理者権限が必要な操作（kill / renice / launchctl） | AppleScript, Authorization, privilege escalation |
 | `/bin/ps` / `/bin/kill` / `/usr/bin/renice` | `ProcessSampler.swift` / `Utilities.swift` | 他ユーザーのプロセス情報取得、終了・優先度変更 | ps, setuid |
 | `NSWorkspace` / `NSRunningApplication` | `Monitor.swift` | アプリの一覧・終了 | AppKit |
+| `URLSession`（HTTPS）/ GitHub REST API / CryptoKit (SHA-256) | `Updater.swift` | 最新リリースの確認と zip のダウンロード・ハッシュ検証 | URLSession, TLS, CryptoKit |
+| `/usr/bin/ditto` / `/usr/bin/codesign --verify` / `/usr/bin/xattr` / `/bin/bash`（生成スクリプト） | `Updater.swift` | 更新ファイルの展開・署名確認・アプリの置き換えと再起動 | ditto, codesign, Gatekeeper |
+| `/usr/sbin/lsof` / Security (`SecStaticCode`) | `NetWatch.swift` | 接続一覧の取得、通信しているプログラムの署名確認 | lsof, Code Signing |
+| UserNotifications | `NetWatch.swift` / `SystemMonitorApp.swift` | 怪しい通信の通知 | UserNotifications |
 
 ## 2. ビルド・配布
 
@@ -49,3 +53,5 @@
 3. **SQLite**：プレースホルダ使用の徹底、履歴ファイルの権限（0600）
 4. **LaunchAgent**：登録する実行ファイルのパス（/Applications 外だと差し替えられるおそれ）
 5. **GitHub Actions**：`permissions` の最小化、アクションのバージョン
+6. **アプリ内アップデート**：ダウンロード元ホストの制限（リダイレクト含む）、SHA-256・バンドル ID・バージョン・`codesign --verify` の確認、置き換えスクリプトのパスのエスケープ。※ .sha256 は同じ Release から取得するため「改ざん検出」ではなく「破損検出」。真正性は HTTPS と GitHub アカウントの保護（2 段階認証）に依存
+7. **lsof の出力解析**（`NetWatch.swift`）：プロセス名・アドレスの文字列をそのまま信用しない（表示と通知本文のみに使い、コマンドには渡さない）

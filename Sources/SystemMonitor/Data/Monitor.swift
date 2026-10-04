@@ -341,6 +341,19 @@ final class Monitor: ObservableObject {
         }
     }
 
+    /// 「履歴 → 通信の警告」を開く (通知をクリックしたとき)
+    func openNetworkAlerts() {
+        UserDefaults.standard.set(HistorySection.network.rawValue, forKey: "historySection")
+        NSApp.activate(ignoringOtherApps: true)
+        if tab == .history {
+            // 履歴タブを作り直して表示を切り替える
+            tab = .processes
+            DispatchQueue.main.async { self.tab = .history }
+        } else {
+            tab = .history
+        }
+    }
+
     func runNewTask() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]

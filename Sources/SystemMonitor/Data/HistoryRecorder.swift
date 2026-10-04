@@ -19,6 +19,7 @@ final class HistoryRecorder: @unchecked Sendable {
 
     private var store: HistoryStore?
     private let sys = SystemSampler()
+    private let netWatch = NetWatch()
     private let procs = ProcessSampler(psInterval: 30)   // 履歴は 10 分単位の集計なので ps は控えめに
     private var lockFD: Int32 = -1
 
@@ -163,6 +164,9 @@ final class HistoryRecorder: @unchecked Sendable {
         if now - lastFlush >= 60 { flushApps(now: now) }
 
         store.db.exec("COMMIT")
+
+        // 怪しい通信の確認 (15 秒ごと)
+        netWatch.check(now: now, txRate: tx, store: store)
 
         // 1 時間ごとに古いデータを削除
         if now - lastPrune >= 3600 {

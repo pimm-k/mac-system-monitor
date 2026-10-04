@@ -183,6 +183,11 @@ final class HistoryStore: @unchecked Sendable {
         CREATE TABLE IF NOT EXISTS spikes(
             id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, value REAL, top TEXT);
         CREATE INDEX IF NOT EXISTS spikes_ts ON spikes(ts);
+        CREATE TABLE IF NOT EXISTS net_alerts(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, rule TEXT, key TEXT,
+            pid INTEGER, name TEXT, path TEXT, remote TEXT, detail TEXT);
+        CREATE INDEX IF NOT EXISTS net_alerts_ts ON net_alerts(ts);
+        CREATE INDEX IF NOT EXISTS net_alerts_key ON net_alerts(key, ts);
         """)
     }
 
@@ -223,6 +228,18 @@ final class HistoryStore: @unchecked Sendable {
                [.int(ts), .text(kind), .double(value), .text(top.joined(separator: "\n"))])
     }
 
+    func insertNetAlert(ts: Int64, rule: String, key: String, pid: Int32, name: String,
+                        path: String, remote: String, detail: String) {
+        db.run("INSERT INTO net_alerts(ts, rule, key, pid, name, path, remote, detail) VALUES(?,?,?,?,?,?,?,?)",
+               [.int(ts), .text(rule), .text(key), .int(Int64(pid)), .text(name), .text(path), .text(remote), .text(detail)])
+    }
+
+    func hasNetAlert(key: String, since: Int64) -> Bool {
+        var found = false
+        db.query("SELECT 1 FROM net_alerts WHERE key = ? AND ts >= ? LIMIT 1", [.text(key), .int(since)]) { _ in found = true }
+        return found
+    }
+
     /// 保存期間を過ぎたデータを削除
     func prune(now: Int64) {
         let rawLimit = now - Self.rawRetention
@@ -232,11 +249,12 @@ final class HistoryStore: @unchecked Sendable {
         db.run("DELETE FROM app_usage WHERE bucket < ?", [.int(limit)])
         db.run("DELETE FROM events WHERE ts < ?", [.int(limit)])
         db.run("DELETE FROM spikes WHERE ts < ?", [.int(limit)])
+        db.run("DELETE FROM net_alerts WHERE ts < ?", [.int(limit)])
         db.exec("PRAGMA incremental_vacuum")
     }
 
     func deleteAll() {
-        db.exec("DELETE FROM samples; DELETE FROM samples_min; DELETE FROM app_usage; DELETE FROM events; DELETE FROM spikes;")
+        db.exec("DELETE FROM samples; DELETE FROM samples_min; DELETE FROM app_usage; DELETE FROM events; DELETE FROM spikes; DELETE FROM net_alerts;")
         db.exec("VACUUM")
     }
 
@@ -299,6 +317,19 @@ final class HistoryStore: @unchecked Sendable {
                  [.int(since), .int(limit)]) { r in
             let top = r.text(4).split(separator: "\n").map(String.init)
             rows.append(SpikeRecord(id: r.int(0), ts: r.int(1), kind: r.text(2), value: r.double(3), top: top))
+        }
+        return rows
+    }
+
+    func netAlerts(since: Int64, limit: Int64 = 1000) -> [NetAlertRecord] {
+        var rows: [NetAlertRecord] = []
+        db.query("""
+        SELECT id, ts, rule, pid, name, path, remote, detail FROM net_alerts
+        WHERE ts >= ? ORDER BY ts DESC, id DESC LIMIT ?
+        """, [.int(since), .int(limit)]) { r in
+            rows.append(NetAlertRecord(id: r.int(0), ts: r.int(1), rule: r.text(2),
+                                       pid: Int32(truncatingIfNeeded: r.int(3)), name: r.text(4),
+                                       path: r.text(5), remote: r.text(6), detail: r.text(7)))
         }
         return rows
     }
