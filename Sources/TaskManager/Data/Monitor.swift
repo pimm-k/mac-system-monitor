@@ -146,9 +146,20 @@ final class Monitor: ObservableObject {
         running = true
         startRecorder()
         defer { running = false }
+        var count = 0
         while !Task.isCancelled {
-            if speed != .paused { await tick() }
-            try? await Task.sleep(nanoseconds: UInt64(speed.interval * 1_000_000_000))
+            let visible = isWindowVisible
+            if speed != .paused {
+                // 軽量化:
+                //  - ウィンドウが見えていない (隠す・最小化・他のウィンドウの裏) ときはプロセス一覧を取らない
+                //  - プロセス一覧を表示しないタブでは、プロセスは 5 回に 1 回だけ取る
+                let needsProcesses = visible && (showsProcessList || count % 5 == 0 || processes.isEmpty)
+                await tick(includeProcesses: needsProcesses)
+                count += 1
+            }
+            // 見えていないときは更新間隔を 2 秒以上にする
+            let interval = visible ? speed.interval : max(speed.interval, 2)
+            try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
         }
     }
 
@@ -168,7 +179,29 @@ final class Monitor: ObservableObject {
         }
     }
 
-    private func tick() async {
+    /// プロセス一覧を表示しているタブか
+    private var showsProcessList: Bool {
+        switch tab ?? .processes {
+        case .processes, .users, .details: return true
+        case .performance, .history, .startup: return false
+        }
+    }
+
+    /// ウィンドウが画面に見えているか (隠す・最小化・完全に隠れているときは false)
+    private var isWindowVisible: Bool {
+        if NSApp.isHidden { return false }
+        return NSApp.windows.contains { w in
+            w.isVisible && !w.isMiniaturized && w.occlusionState.contains(.visible) && w.canBecomeMain
+        }
+    }
+
+    private func tick(includeProcesses: Bool) async {
+        let ss = sysSampler
+        guard includeProcesses else {
+            let s = await Task.detached(priority: .utility) { ss.sample() }.value
+            apply(nil, s)
+            return
+        }
         let apps = NSWorkspace.shared.runningApplications.map {
             AppInfo(pid: $0.processIdentifier,
                     name: $0.localizedName ?? "",
@@ -176,15 +209,15 @@ final class Monitor: ObservableObject {
                     bundlePath: $0.bundleURL?.path,
                     regular: $0.activationPolicy == .regular)
         }
-        let ps = procSampler, ss = sysSampler
+        let ps = procSampler
         let result = await Task.detached(priority: .utility) {
             (ps.sample(apps: apps), ss.sample())
         }.value
         apply(result.0, result.1)
     }
 
-    private func apply(_ procs: [ProcItem], _ s: SystemSnapshot) {
-        processes = procs
+    private func apply(_ procs: [ProcItem]?, _ s: SystemSnapshot) {
+        if let procs { processes = procs }
         system = s
         push(&cpuHistory, s.cpu.total)
         if coreHistory.count != s.cpu.perCore.count {

@@ -63,6 +63,20 @@ final class ProcessSampler: @unchecked Sendable {
 
     private var prev: [pid_t: Prev] = [:]
     private var users: [uid_t: String] = [:]
+
+    // 軽量化: 実行ファイルのパスは PID ごとにキャッシュ (コマンド名が変わったら取り直す)
+    private var pathCache: [pid_t: (comm: String, path: String)] = [:]
+
+    // 軽量化: 他ユーザーのプロセス用の ps は毎回ではなく psInterval 秒ごとに実行する
+    private let psInterval: Double
+    private var psLast: [pid_t: (cpuNs: Double, rss: UInt64)] = [:]
+    private var psLastTime: UInt64 = 0
+    private var psCpu: [pid_t: Double] = [:]   // 直近 2 回の ps から求めた CPU 使用率
+
+    /// - Parameter psInterval: 他ユーザー (root など) のプロセス情報を ps で取り直す間隔 (秒)
+    init(psInterval: Double = 3) {
+        self.psInterval = psInterval
+    }
     private let ncpu = Double(max(1, ProcessInfo.processInfo.activeProcessorCount))
     private let timebase: Double = {
         var tb = mach_timebase_info_data_t()
@@ -76,7 +90,7 @@ final class ProcessSampler: @unchecked Sendable {
 
         let pids = listPids()
         let now = DispatchTime.now().uptimeNanoseconds
-        var ps: [pid_t: (cpuNs: Double, rss: UInt64)]? = nil
+        var psChecked = false
         var newPrev: [pid_t: Prev] = [:]
         var items: [ProcItem] = []
         items.reserveCapacity(pids.count)
@@ -87,8 +101,14 @@ final class ProcessSampler: @unchecked Sendable {
             let infoSize = Int32(MemoryLayout<proc_bsdshortinfo>.stride)
             guard proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, infoSize) == infoSize else { continue }
 
-            let path = processPath(pid)
             let comm = tupleString(info.pbsi_comm)
+            let path: String
+            if let c = pathCache[pid], c.comm == comm {
+                path = c.path
+            } else {
+                path = processPath(pid)
+                pathCache[pid] = (comm, path)
+            }
             let app = appMap[pid]
 
             var name = app?.name ?? ""
@@ -124,15 +144,20 @@ final class ProcessSampler: @unchecked Sendable {
             } else {
                 // 他ユーザー (root など) のプロセスは ps (setuid) から取得
                 limited = true
-                if ps == nil { ps = psSnapshot() }
-                if let v = ps?[pid] {
+                if !psChecked {
+                    refreshPSIfNeeded(now: now)
+                    psChecked = true
+                }
+                if let v = psLast[pid] {
                     cpuNs = v.cpuNs
                     memory = v.rss
                 }
             }
 
             var cpu = 0.0, dr = 0.0, dw = 0.0
-            if let p = prev[pid], now > p.t {
+            if limited {
+                cpu = psCpu[pid] ?? 0
+            } else if let p = prev[pid], now > p.t {
                 let dt = Double(now - p.t)
                 if cpuNs >= p.cpuNs { cpu = (cpuNs - p.cpuNs) / dt * 100 / ncpu }
                 if diskR >= p.diskR { dr = Double(diskR - p.diskR) / dt * 1e9 }
@@ -165,6 +190,10 @@ final class ProcessSampler: @unchecked Sendable {
             ))
         }
         prev = newPrev
+        // 終了したプロセスのキャッシュを捨てる
+        if pathCache.count > newPrev.count + 64 {
+            pathCache = pathCache.filter { newPrev[$0.key] != nil }
+        }
         return items
     }
 
@@ -196,6 +225,24 @@ final class ProcessSampler: @unchecked Sendable {
         }
         users[uid] = name
         return name
+    }
+
+    /// ps の結果が psInterval 秒より古ければ取り直し、前回との差から CPU 使用率を求める
+    private func refreshPSIfNeeded(now: UInt64) {
+        let elapsed = psLastTime == 0 ? Double.infinity : Double(now - psLastTime) / 1e9
+        guard elapsed >= psInterval else { return }
+        let snap = psSnapshot()
+        var cpu: [pid_t: Double] = [:]
+        if elapsed.isFinite, elapsed > 0 {
+            for (pid, v) in snap {
+                if let old = psLast[pid], v.cpuNs >= old.cpuNs {
+                    cpu[pid] = min(100, (v.cpuNs - old.cpuNs) / (elapsed * 1e9) * 100 / ncpu)
+                }
+            }
+        }
+        psLast = snap
+        psCpu = cpu
+        psLastTime = now
     }
 
     private func psSnapshot() -> [pid_t: (cpuNs: Double, rss: UInt64)] {
