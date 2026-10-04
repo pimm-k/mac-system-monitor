@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-04
+
 ### 変更（互換性に影響あり）
 - **名前を「タスク マネージャー」から「システムモニター」（System Monitor）に変更**
   - アプリ: `TaskManager.app` → `SystemMonitor.app`（日本語環境では「システムモニター」、英語環境では「System Monitor」と表示）
@@ -104,7 +106,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...v2.0.0
 [1.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.3.0...v1.4.0
