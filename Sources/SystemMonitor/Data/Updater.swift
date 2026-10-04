@@ -11,8 +11,8 @@ import CryptoKit
 /// - `codesign --verify --deep --strict` が通ること (改ざんされていないこと)
 @MainActor
 final class Updater: ObservableObject {
-    static let repo = "pimm-k/mac-system-monitor"
-    private static let bundleID = "local.pim.systemmonitor"
+    nonisolated static let repo = "pimm-k/mac-system-monitor"
+    nonisolated private static let bundleID = "local.pim.systemmonitor"
     private enum Keys {
         static let autoCheck = "updateAutoCheck"
         static let lastCheck = "updateLastCheck"
