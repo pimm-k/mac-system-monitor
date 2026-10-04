@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-04
+
 ### 追加
 - **表示の拡大**：ウィンドウを大きくすると、文字・グラフ・アイコン・表の列幅が自動で大きくなるように（「オプション」から切り替え可）
 - **拡大・縮小**：⌘+ / ⌘− / ⌘0（表示メニュー・「オプション」からも操作可）。設定は次回起動時も保持
@@ -74,7 +76,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...v1.1.0
