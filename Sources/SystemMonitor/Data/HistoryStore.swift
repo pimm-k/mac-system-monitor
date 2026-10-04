@@ -123,7 +123,7 @@ struct ProcessEvent: Identifiable, Hashable {
     var name: String
     var path: String
     var user: String
-    var kindText: String { started ? "起動" : "終了" }
+    var kindText: String { started ? L("起動") : L("終了") }
 }
 
 struct SpikeRecord: Identifiable, Hashable {
@@ -148,20 +148,20 @@ enum HistoryDataKind: String, CaseIterable, Identifiable, Sendable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .graphs: return "推移グラフ"
-        case .apps: return "アプリの履歴"
-        case .spikes: return "高負荷の記録"
-        case .network: return "通信の警告"
-        case .events: return "起動・終了ログ"
+        case .graphs: return L("推移グラフ")
+        case .apps: return L("アプリの履歴")
+        case .spikes: return L("高負荷の記録")
+        case .network: return L("通信の警告")
+        case .events: return L("起動・終了ログ")
         }
     }
     var detail: String {
         switch self {
-        case .graphs: return "CPU・メモリ・ディスク・ネットワーク・GPU の推移"
-        case .apps: return "アプリごとの CPU 時間・ディスク量など"
-        case .spikes: return "CPU・メモリが高負荷になった時の上位プロセス"
-        case .network: return "怪しい通信の検知記録（通知しない設定は残ります）"
-        case .events: return "プロセスの起動・終了の記録"
+        case .graphs: return L("CPU・メモリ・ディスク・ネットワーク・GPU の推移")
+        case .apps: return L("アプリごとの CPU 時間・ディスク量など")
+        case .spikes: return L("CPU・メモリが高負荷になった時の上位プロセス")
+        case .network: return L("怪しい通信の検知記録（通知しない設定は残ります）")
+        case .events: return L("プロセスの起動・終了の記録")
         }
     }
     /// このデータを保存しているテーブル

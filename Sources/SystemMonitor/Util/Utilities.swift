@@ -19,7 +19,7 @@ enum Fmt {
 
     static func bytes(_ b: UInt64) -> String { bytes(Double(b)) }
 
-    static func rate(_ bytesPerSec: Double) -> String { bytes(bytesPerSec) + "/秒" }
+    static func rate(_ bytesPerSec: Double) -> String { bytes(bytesPerSec) + L("/秒") }
 
     /// ネットワーク用 (ビット/秒, 1000 基準)
     static func bits(_ bytesPerSec: Double) -> String {
@@ -59,7 +59,7 @@ enum AppVersion {
 
     /// 例: "v1.0.0 (12)"。swift run で起動したときは "開発版"
     static var display: String {
-        guard let s = short else { return "開発版 (swift run)" }
+        guard let s = short else { return L("開発版 (swift run)") }
         return "v\(s) (\(build ?? "-"))"
     }
 }

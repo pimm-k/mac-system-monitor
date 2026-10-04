@@ -36,10 +36,10 @@ enum NetRule: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .port: return "不審なポートへの通信"
-        case .location: return "一時フォルダ等のプログラムによる通信"
-        case .signature: return "署名のないプログラムによる通信"
-        case .upload: return "大量の送信が続いています"
+        case .port: return L("不審なポートへの通信")
+        case .location: return L("一時フォルダ等のプログラムによる通信")
+        case .signature: return L("署名のないプログラムによる通信")
+        case .upload: return L("大量の送信が続いています")
         }
     }
     var icon: String {
@@ -52,10 +52,10 @@ enum NetRule: String, CaseIterable {
     }
     var explanation: String {
         switch self {
-        case .port: return "マルウェアの遠隔操作・Tor・仮想通貨の採掘などでよく使われるポート番号への通信、またはそのポートでの待ち受け"
-        case .location: return "/tmp・ダウンロード・/Users/Shared など、普通のアプリが置かれない場所にあるプログラムの外部通信"
-        case .signature: return "コード署名が無い、または壊れている (改ざんの可能性がある) プログラムの外部通信"
-        case .upload: return "外部への送信が 1 分以上、平均 \(Int(NetWatch.uploadThreshold / 1_000_000)) MB/秒を超え続けた"
+        case .port: return L("マルウェアの遠隔操作・Tor・仮想通貨の採掘などでよく使われるポート番号への通信、またはそのポートでの待ち受け")
+        case .location: return L("/tmp・ダウンロード・/Users/Shared など、普通のアプリが置かれない場所にあるプログラムの外部通信")
+        case .signature: return L("コード署名が無い、または壊れている (改ざんの可能性がある) プログラムの外部通信")
+        case .upload: return L("外部への送信が 1 分以上、平均 %@ MB/秒を超え続けた", "\(Int(NetWatch.uploadThreshold / 1_000_000))")
         }
     }
 }
@@ -63,18 +63,18 @@ enum NetRule: String, CaseIterable {
 /// よく悪用されるポート番号と理由
 enum SuspiciousPorts {
     static let table: [Int: String] = [
-        4444: "Metasploit などの遠隔操作ツールの既定ポート",
-        1337: "バックドアでよく使われるポート",
-        31337: "バックドアでよく使われるポート",
-        6666: "IRC (ボットネットの指令サーバーでよく使われる)",
-        6667: "IRC (ボットネットの指令サーバーでよく使われる)",
-        6668: "IRC (ボットネットの指令サーバーでよく使われる)",
-        6669: "IRC (ボットネットの指令サーバーでよく使われる)",
-        9001: "Tor の中継ポート",
-        9030: "Tor のディレクトリ ポート",
-        3333: "仮想通貨マイニング プール (Stratum)",
-        14444: "仮想通貨マイニング プール (Monero)",
-        45700: "仮想通貨マイニング プール (Monero)",
+        4444: L("Metasploit などの遠隔操作ツールの既定ポート"),
+        1337: L("バックドアでよく使われるポート"),
+        31337: L("バックドアでよく使われるポート"),
+        6666: L("IRC (ボットネットの指令サーバーでよく使われる)"),
+        6667: L("IRC (ボットネットの指令サーバーでよく使われる)"),
+        6668: L("IRC (ボットネットの指令サーバーでよく使われる)"),
+        6669: L("IRC (ボットネットの指令サーバーでよく使われる)"),
+        9001: L("Tor の中継ポート"),
+        9030: L("Tor のディレクトリ ポート"),
+        3333: L("仮想通貨マイニング プール (Stratum)"),
+        14444: L("仮想通貨マイニング プール (Monero)"),
+        45700: L("仮想通貨マイニング プール (Monero)"),
     ]
 }
 
@@ -105,7 +105,7 @@ struct NetConn: Hashable {
 
     var isListen: Bool { state == "LISTEN" }
     var remoteText: String {
-        guard let h = remoteHost, let p = remotePort else { return "待ち受け \(localHost):\(localPort)" }
+        guard let h = remoteHost, let p = remotePort else { return L("待ち受け %@:%@", "\(localHost)", "\(localPort)") }
         return h.contains(":") ? "[\(h)]:\(p)" : "\(h):\(p)"
     }
 }
@@ -259,23 +259,23 @@ final class NetWatch {
             let port = c.isListen ? c.localPort : (c.remotePort ?? 0)
             if let why = SuspiciousPorts.table[port] {
                 report(.port, conn: c, name: name, path: path, keyExtra: String(port),
-                       detail: "ポート \(port): \(why)", now: now, store: store, ignored: ignored)
+                       detail: L("ポート %@: %@", "\(port)", "\(why)"), now: now, store: store, ignored: ignored)
             }
             guard !path.isEmpty else { continue }
             // 2. 置き場所
             if let dir = suspiciousDirs.first(where: { path.hasPrefix($0) }) {
                 report(.location, conn: c, name: name, path: path, keyExtra: "",
-                       detail: "プログラムの場所: \(dir)", now: now, store: store, ignored: ignored)
+                       detail: L("プログラムの場所: %@", "\(dir)"), now: now, store: store, ignored: ignored)
             }
             // 3. 署名
             switch CodeSignature.status(of: path) {
             case .valid: break
             case .unsigned:
                 report(.signature, conn: c, name: name, path: path, keyExtra: "",
-                       detail: "コード署名がありません", now: now, store: store, ignored: ignored)
+                       detail: L("コード署名がありません"), now: now, store: store, ignored: ignored)
             case .invalid:
                 report(.signature, conn: c, name: name, path: path, keyExtra: "",
-                       detail: "コード署名が壊れています (改ざんの可能性)", now: now, store: store, ignored: ignored)
+                       detail: L("コード署名が壊れています (改ざんの可能性)"), now: now, store: store, ignored: ignored)
             }
         }
     }
@@ -291,11 +291,11 @@ final class NetWatch {
         for c in NetConnections.list() where c.remoteHost.map({ !NetConnections.isLocal($0) }) ?? false {
             counts[c.command, default: 0] += 1
         }
-        let top = counts.sorted { $0.value > $1.value }.prefix(3).map { "\($0.key) (\($0.value) 接続)" }
-        let detail = "送信 \(Fmt.rate(txRate)) が \(now - since) 秒以上続いています"
-            + (top.isEmpty ? "" : "\n外部との接続が多いプロセス: " + top.joined(separator: ", "))
+        let top = counts.sorted { $0.value > $1.value }.prefix(3).map { L("%@ (%@ 接続)", "\($0.key)", "\($0.value)") }
+        let detail = L("送信 %@ が %@ 秒以上続いています", "\(Fmt.rate(txRate))", "\(now - since)")
+            + (top.isEmpty ? "" : L("\n外部との接続が多いプロセス: ") + top.joined(separator: ", "))
         store.insertNetAlert(ts: now, rule: NetRule.upload.rawValue, key: "upload", pid: 0,
-                             name: "システム全体", path: "", remote: "", detail: detail)
+                             name: L("システム全体"), path: "", remote: "", detail: detail)
         Notifier.post(title: "⚠️ " + NetRule.upload.title, body: detail, id: "upload-\(now)")
     }
 

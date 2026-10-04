@@ -50,30 +50,30 @@ struct UsersView: View {
 
         VSplitView {
             Table(users, selection: $selectionBox.value, sortOrder: $sortOrderBox.value) {
-                TableColumn("ユーザー", value: \.name) { u in
+                TableColumn(L("ユーザー"), value: \.name) { u in
                     Label(u.name, systemImage: u.id == 0 ? "lock.shield" : "person.crop.circle")
                 }
                 .width(min: 160 * ui, ideal: 220 * ui)
                 TableColumn("UID", value: \.id) { u in Text(String(u.id)).monospacedDigit() }
                     .width(min: 50 * ui, ideal: 60 * ui)
-                TableColumn("プロセス数", value: \.count) { u in Text("\(u.count)").monospacedDigit() }
+                TableColumn(L("プロセス数"), value: \.count) { u in Text("\(u.count)").monospacedDigit() }
                     .width(min: 60 * ui, ideal: 80 * ui)
                 TableColumn("CPU", value: \.cpu) { u in HeatCell(text: Fmt.percent(u.cpu), level: u.cpu / 40) }
-                TableColumn("メモリ", value: \.memory) { u in
+                TableColumn(L("メモリ"), value: \.memory) { u in
                     HeatCell(text: Fmt.bytes(u.memory), level: Double(u.memory) / total * 3)
                 }
-                TableColumn("ディスク", value: \.disk) { u in
+                TableColumn(L("ディスク"), value: \.disk) { u in
                     HeatCell(text: Fmt.rate(u.disk), level: u.disk / 20_000_000)
                 }
             }
             .frame(minHeight: 160 * ui)
 
             VStack(alignment: .leading, spacing: 0) {
-                Text(selection.isEmpty ? "ユーザーを選択するとプロセスを表示します" : "選択したユーザーのプロセス (\(procs.count))")
+                Text(selection.isEmpty ? L("ユーザーを選択するとプロセスを表示します") : L("選択したユーザーのプロセス (%@)", "\(procs.count)"))
                     .scaledFont(.callout).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                 Table(procs, selection: $procSelectionBox.value, sortOrder: $procSortBox.value) {
-                    TableColumn("名前", value: \.name) { p in
+                    TableColumn(L("名前"), value: \.name) { p in
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: p.path, bundlePath: p.bundlePath))
                                 .resizable().frame(width: 16 * ui, height: 16 * ui)
@@ -82,14 +82,14 @@ struct UsersView: View {
                     }
                     TableColumn("PID", value: \.pid) { p in Text(String(p.pid)).monospacedDigit() }
                     TableColumn("CPU", value: \.cpu) { p in HeatCell(text: Fmt.percent(p.cpu), level: p.cpu / 40) }
-                    TableColumn("メモリ", value: \.memory) { p in
+                    TableColumn(L("メモリ"), value: \.memory) { p in
                         HeatCell(text: Fmt.bytes(p.memory), level: Double(p.memory) / total * 8)
                     }
                 }
                 .contextMenu(forSelectionType: pid_t.self) { ids in
                     if !ids.isEmpty {
-                        Button("タスクの終了") { m.endTask(pids: Array(ids), force: false, preferApp: false) }
-                        Button("強制終了") { m.endTask(pids: Array(ids), force: true, preferApp: false) }
+                        Button(L("タスクの終了")) { m.endTask(pids: Array(ids), force: false, preferApp: false) }
+                        Button(L("強制終了")) { m.endTask(pids: Array(ids), force: true, preferApp: false) }
                     }
                 }
             }

@@ -58,7 +58,7 @@ struct SystemMonitorApp: App {
     @StateObject private var updater = Updater()
 
     var body: some Scene {
-        Window("システムモニター", id: "main") {
+        Window(L("システムモニター"), id: "main") {
             ContentView()
                 .environmentObject(monitor)
                 .environmentObject(updater)
@@ -67,20 +67,20 @@ struct SystemMonitorApp: App {
         .defaultSize(width: 1180, height: 760)
         .commands {
             CommandGroup(after: .appInfo) {
-                Button("アップデートを確認…") { Task { await updater.check(userInitiated: true) } }
+                Button(L("アップデートを確認…")) { Task { await updater.check(userInitiated: true) } }
             }
             CommandGroup(after: .toolbar) {
-                Button("拡大") { monitor.zoomIn() }
+                Button(L("拡大")) { monitor.zoomIn() }
                     .keyboardShortcut("+", modifiers: .command)
-                Button("縮小") { monitor.zoomOut() }
+                Button(L("縮小")) { monitor.zoomOut() }
                     .keyboardShortcut("-", modifiers: .command)
-                Button("実際のサイズ") { monitor.zoomReset() }
+                Button(L("実際のサイズ")) { monitor.zoomReset() }
                     .keyboardShortcut("0", modifiers: .command)
-                Toggle("ウィンドウの大きさに合わせて拡大", isOn: $monitor.autoScale)
+                Toggle(L("ウィンドウの大きさに合わせて拡大"), isOn: $monitor.autoScale)
                 Divider()
             }
             CommandGroup(replacing: .newItem) {
-                Button("新しいタスクを実行する…") { monitor.runNewTask() }
+                Button(L("新しいタスクを実行する…")) { monitor.runNewTask() }
                     .keyboardShortcut("n")
             }
         }

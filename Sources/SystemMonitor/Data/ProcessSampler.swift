@@ -36,18 +36,18 @@ struct ProcItem: Identifiable, Hashable, Sendable {
 
     var status: String {
         switch statusCode {
-        case 4: return "中断"
-        case 5: return "ゾンビ"
+        case 4: return L("中断")
+        case 5: return L("ゾンビ")
         default: return ""
         }
     }
 
     var statusLong: String {
         switch statusCode {
-        case 4: return "中断"
-        case 5: return "ゾンビ"
-        case 1: return "作成中"
-        default: return "実行中"
+        case 4: return L("中断")
+        case 5: return L("ゾンビ")
+        case 1: return L("作成中")
+        default: return L("実行中")
         }
     }
 }

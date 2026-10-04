@@ -85,16 +85,16 @@ final class Updater: ObservableObject {
     func install(_ rel: Release) {
         let appURL = Bundle.main.bundleURL
         guard AppVersion.short != nil, appURL.pathExtension == "app" else {
-            state = .failed("swift run で起動したときは更新できません。")
+            state = .failed(L("swift run で起動したときは更新できません。"))
             return
         }
         let parent = appURL.deletingLastPathComponent()
         guard FileManager.default.isWritableFile(atPath: parent.path) else {
-            state = .failed("\(parent.path) に書き込めないため更新できません。Releases ページから手動で入れ替えてください。")
+            state = .failed(L("%@ に書き込めないため更新できません。Releases ページから手動で入れ替えてください。", "\(parent.path)"))
             return
         }
         if appURL.path.contains("/AppTranslocation/") || appURL.path.hasPrefix("/Volumes/") {
-            state = .failed("ディスクイメージや一時的な場所から起動しているため更新できません。アプリを「アプリケーション」フォルダに入れてから起動してください。")
+            state = .failed(L("ディスクイメージや一時的な場所から起動しているため更新できません。アプリを「アプリケーション」フォルダに入れてから起動してください。"))
             return
         }
         state = .downloading(rel)
@@ -125,23 +125,23 @@ final class Updater: ObservableObject {
         req.timeoutInterval = 15
         let (data, resp) = try await URLSession.shared.data(for: req)
         guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
-            throw UpdateError("GitHub から最新版の情報を取得できませんでした。")
+            throw UpdateError(L("GitHub から最新版の情報を取得できませんでした。"))
         }
         struct Asset: Decodable { let name: String; let browser_download_url: String }
         struct R: Decodable { let tag_name: String; let body: String?; let html_url: String; let assets: [Asset]; let draft: Bool; let prerelease: Bool }
         let r = try JSONDecoder().decode(R.self, from: data)
-        guard !r.draft, !r.prerelease else { throw UpdateError("正式版のリリースが見つかりません。") }
+        guard !r.draft, !r.prerelease else { throw UpdateError(L("正式版のリリースが見つかりません。")) }
         let tag = r.tag_name
         let version = tag.hasPrefix("v") ? String(tag.dropFirst()) : tag
         guard version.range(of: #"^\d+\.\d+\.\d+$"#, options: .regularExpression) != nil else {
-            throw UpdateError("リリースのバージョン表記 (\(tag)) を読み取れません。")
+            throw UpdateError(L("リリースのバージョン表記 (%@) を読み取れません。", "\(tag)"))
         }
         let zipName = "SystemMonitor-\(tag).zip"
         guard let zip = r.assets.first(where: { $0.name == zipName }).flatMap({ URL(string: $0.browser_download_url) }),
               let sha = r.assets.first(where: { $0.name == zipName + ".sha256" }).flatMap({ URL(string: $0.browser_download_url) }),
               let page = URL(string: r.html_url),
               isTrusted(zip), isTrusted(sha)
-        else { throw UpdateError("リリースに必要なファイル (\(zipName) と .sha256) が見つかりません。") }
+        else { throw UpdateError(L("リリースに必要なファイル (%@ と .sha256) が見つかりません。", "\(zipName)")) }
         return Release(version: version, notes: r.body ?? "", pageURL: page, zipURL: zip, shaURL: sha)
     }
 
@@ -176,7 +176,7 @@ final class Updater: ObservableObject {
     nonisolated private static func download(_ url: URL, to dest: URL) async throws {
         let (tmp, resp) = try await URLSession.shared.download(from: url, delegate: RedirectGuard())
         guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
-            throw UpdateError("ダウンロードに失敗しました: \(url.lastPathComponent)")
+            throw UpdateError(L("ダウンロードに失敗しました: %@", "\(url.lastPathComponent)"))
         }
         try? FileManager.default.removeItem(at: dest)
         try FileManager.default.moveItem(at: tmp, to: dest)
@@ -198,30 +198,30 @@ final class Updater: ObservableObject {
         let data = try Data(contentsOf: zip, options: .mappedIfSafe)
         let actual = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         guard expected.count == 64, expected == actual else {
-            throw UpdateError("ダウンロードしたファイルのハッシュが一致しません。更新を中止しました。")
+            throw UpdateError(L("ダウンロードしたファイルのハッシュが一致しません。更新を中止しました。"))
         }
 
         // 2. 展開
         let out = work.appendingPathComponent("unzipped")
         let r = Shell.run("/usr/bin/ditto", ["-x", "-k", zip.path, out.path])
-        guard r.status == 0 else { throw UpdateError("展開に失敗しました: \(r.err)") }
+        guard r.status == 0 else { throw UpdateError(L("展開に失敗しました: %@", "\(r.err)")) }
         let app = out.appendingPathComponent("SystemMonitor.app")
         guard fm.fileExists(atPath: app.path), let info = Bundle(url: app)?.infoDictionary else {
-            throw UpdateError("更新ファイルの中にアプリが見つかりません。")
+            throw UpdateError(L("更新ファイルの中にアプリが見つかりません。"))
         }
 
         // 3. 中身の確認
         guard info["CFBundleIdentifier"] as? String == bundleID else {
-            throw UpdateError("更新ファイルのアプリが別物です (バンドル ID 不一致)。更新を中止しました。")
+            throw UpdateError(L("更新ファイルのアプリが別物です (バンドル ID 不一致)。更新を中止しました。"))
         }
         guard info["CFBundleShortVersionString"] as? String == rel.version else {
-            throw UpdateError("更新ファイルのバージョンがリリースと一致しません。更新を中止しました。")
+            throw UpdateError(L("更新ファイルのバージョンがリリースと一致しません。更新を中止しました。"))
         }
 
         // 4. 署名 (改ざんされていないか)
         let cs = Shell.run("/usr/bin/codesign", ["--verify", "--deep", "--strict", app.path])
         guard cs.status == 0 else {
-            throw UpdateError("アプリの署名を確認できません。更新を中止しました。\n\(cs.err)")
+            throw UpdateError(L("アプリの署名を確認できません。更新を中止しました。\n%@", "\(cs.err)"))
         }
         // ダウンロード由来の隔離属性が付いていれば外す (中身は上で検証済み)
         Shell.run("/usr/bin/xattr", ["-dr", "com.apple.quarantine", app.path])

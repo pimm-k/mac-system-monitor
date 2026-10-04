@@ -53,25 +53,30 @@ struct ContentView: View {
             .id(m.tab ?? .processes)
             .navigationTitle((m.tab ?? .processes).title)
         }
-        .searchable(text: $searchBox.value, placement: .toolbar, prompt: "名前・PID・ユーザーで検索")
+        .searchable(text: $searchBox.value, placement: .toolbar, prompt: L("名前・PID・ユーザーで検索"))
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Menu {
-                    Picker("リアルタイム更新の速度", selection: $m.speed) {
+                    Picker(L("リアルタイム更新の速度"), selection: $m.speed) {
                         ForEach(UpdateSpeed.allCases) { s in Text(s.title).tag(s) }
                     }
                     Divider()
-                    Toggle("ウィンドウの大きさに合わせて拡大", isOn: $m.autoScale)
-                    Button("拡大") { m.zoomIn() }
-                    Button("縮小") { m.zoomOut() }
-                    Button("実際のサイズ（\(Int((m.zoom * 100).rounded()))% → 100%）") { m.zoomReset() }
+                    Toggle(L("ウィンドウの大きさに合わせて拡大"), isOn: $m.autoScale)
+                    Button(L("拡大")) { m.zoomIn() }
+                    Button(L("縮小")) { m.zoomOut() }
+                    Button(L("実際のサイズ（%@%% → 100%%）", "\(Int((m.zoom * 100).rounded()))")) { m.zoomReset() }
                     Divider()
-                    Toggle("常に手前に表示", isOn: $m.alwaysOnTop)
+                    Toggle(L("常に手前に表示"), isOn: $m.alwaysOnTop)
+                    Picker("言語 / Language", selection: Binding(
+                        get: { AppLanguage.current },
+                        set: { AppLanguage.set($0) })) {
+                        ForEach(AppLanguage.allCases) { l in Text(l.title).tag(l) }
+                    }
                     Divider()
-                    Button("アップデートを確認…") { Task { await updater.check(userInitiated: true) } }
-                    Toggle("起動時にアップデートを確認", isOn: $updater.autoCheck)
+                    Button(L("アップデートを確認…")) { Task { await updater.check(userInitiated: true) } }
+                    Toggle(L("起動時にアップデートを確認"), isOn: $updater.autoCheck)
                 } label: {
-                    Label("オプション", systemImage: "ellipsis.circle")
+                    Label(L("オプション"), systemImage: "ellipsis.circle")
                 }
             }
         }
@@ -79,14 +84,14 @@ struct ContentView: View {
                isPresented: Binding(get: { m.alert != nil }, set: { if !$0 { m.alert = nil } }),
                presenting: m.alert) { info in
             if let cmd = info.adminCommand {
-                Button("管理者として実行") { m.runAsAdmin(cmd) }
-                Button("キャンセル", role: .cancel) {}
+                Button(L("管理者として実行")) { m.runAsAdmin(cmd) }
+                Button(L("キャンセル"), role: .cancel) {}
             } else {
                 Button("OK", role: .cancel) {}
             }
         } message: { info in
             if let cmd = info.adminCommand {
-                Text(info.message + "\n\n管理者 (root) として次のコマンドを実行します:\n" + cmd)
+                Text(info.message + L("\n\n管理者 (root) として次のコマンドを実行します:\n") + cmd)
             } else {
                 Text(info.message)
             }
@@ -107,15 +112,15 @@ private struct SidebarFooter: View {
             Divider()
             Group {
                 Text("CPU \(Fmt.percent(m.system.cpu.total))")
-                Text("メモリ \(Fmt.percent(m.system.mem.percent))")
-                Text("プロセス \(m.processes.count)")
-                if m.speed == .paused { Text("更新を一時停止中").foregroundStyle(.orange) }
+                Text(L("メモリ %@", "\(Fmt.percent(m.system.mem.percent))"))
+                Text(L("プロセス %@", "\(m.processes.count)"))
+                if m.speed == .paused { Text(L("更新を一時停止中")).foregroundStyle(.orange) }
                 Text(AppVersion.display)
                     .foregroundStyle(.tertiary)
-                    .help("コミット: \(AppVersion.commit ?? "—")")
+                    .help(L("コミット: %@", "\(AppVersion.commit ?? "—")"))
                     .padding(.top, 2)
                 if case .available(let r) = updater.state {
-                    Button("⬆︎ v\(r.version) にアップデート") { updater.showSheet = true }
+                    Button(L("⬆︎ v%@ にアップデート", "\(r.version)")) { updater.showSheet = true }
                         .buttonStyle(.link)
                 }
             }

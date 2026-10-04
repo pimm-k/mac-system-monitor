@@ -30,6 +30,9 @@ jobs:
       - name: VERSION の形式チェック
         run: grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' VERSION || { echo "::error::VERSION は X.Y.Z 形式にしてください"; exit 1; }
 
+      - name: 翻訳の抜けチェック
+        run: python3 scripts/check-l10n.py
+
       - name: ビルド (debug)
         run: swift build
 

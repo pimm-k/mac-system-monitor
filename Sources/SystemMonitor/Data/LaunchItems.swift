@@ -4,9 +4,15 @@ import Darwin
 /// LaunchAgents / LaunchDaemons の項目
 struct LaunchItem: Identifiable, Hashable, Sendable {
     enum Kind: String, Sendable {
-        case userAgent = "ユーザー エージェント"
-        case globalAgent = "グローバル エージェント"
-        case daemon = "システム デーモン"
+        case userAgent, globalAgent, daemon
+
+        var title: String {
+            switch self {
+            case .userAgent: return L("ユーザー エージェント")
+            case .globalAgent: return L("グローバル エージェント")
+            case .daemon: return L("システム デーモン")
+            }
+        }
     }
 
     var id: String { path }
@@ -19,16 +25,16 @@ struct LaunchItem: Identifiable, Hashable, Sendable {
     var disabled: Bool
     var running: Bool?
 
-    var kindName: String { kind.rawValue }
-    var statusText: String { disabled ? "無効" : "有効" }
+    var kindName: String { kind.title }
+    var statusText: String { disabled ? L("無効") : L("有効") }
     var runningText: String {
         switch running {
-        case .some(true): return "実行中"
-        case .some(false): return "停止"
+        case .some(true): return L("実行中")
+        case .some(false): return L("停止")
         case .none: return "—"
         }
     }
-    var runAtLoadText: String { runAtLoad || keepAlive ? "はい" : "いいえ" }
+    var runAtLoadText: String { runAtLoad || keepAlive ? L("はい") : L("いいえ") }
 
     /// com.google.keystone → Google
     var publisher: String {

@@ -6,6 +6,8 @@
 
 <p align="center"><b>System Monitor</b> — mac-system-monitor</p>
 
+<p align="center">日本語 | <a href="README.en.md">English</a></p>
+
 <p align="center">
   プロセス・パフォーマンス・履歴を確認できる macOS 向けのシステムモニターです（Windows のタスクマネージャーを参考に SwiftUI で開発）。<br>
   A system monitor for macOS inspired by the Windows Task Manager, built with SwiftUI.
@@ -37,6 +39,7 @@
 - タブ切り替え（⌘1〜⌘6）、検索、更新速度の変更、常に手前に表示
 - root など他ユーザーのプロセスの操作は、確認後に管理者パスワードで実行
 - **怪しい通信の通知**：不審なポート（遠隔操作・Tor・マイニング等）への通信、/tmp やダウンロード フォルダのプログラムの通信、署名のない／壊れたプログラムの通信、大量送信の継続を通知センターに通知（履歴 → 通信の警告で一覧・除外設定）
+- **日本語 / English**：Mac の言語設定に合わせて自動で切り替え。「オプション → 言語 / Language」でアプリだけ別の言語にすることも可能（再起動で反映）
 - **アプリ内アップデート**：起動時（1 日 1 回）や「システムモニター → アップデートを確認…」で新しいバージョンを確認し、ワンクリックで更新（ハッシュ値・署名などを検証してから置き換え）
 
 ## 動作環境
@@ -93,13 +96,15 @@ Sources/SystemMonitor/
 │   ├── LegacyMigration.swift … 旧名 TaskManager (v1.x) からの引き継ぎ
 │   └── LaunchItems.swift     … LaunchAgents / Daemons の読み込みと切り替え
 ├── Views/                    … 各タブの画面
-└── Util/Utilities.swift      … 書式・sysctl・シェル実行
+├── Util/Utilities.swift      … 書式・sysctl・シェル実行
+└── Util/Localization.swift   … 翻訳 (L("日本語")) と表示言語の切り替え
 scripts/release.sh            … リリース (バージョン更新・CHANGELOG・タグ作成)
 scripts/make_dmg.sh           … インストーラー (.dmg) の作成
 .github/workflows/            … CI (自動ビルド) と Release (自動公開)
 VERSION                       … バージョン番号 (唯一の正)
 Resources/
 ├── Info.plist
+├── en.lproj/Localizable.strings … 英語訳 (キー = 日本語の原文)
 ├── AppIcon.icns
 └── icon/                     … アイコン原画と生成スクリプト
 ```
@@ -110,7 +115,7 @@ Resources/
 - 無効のときは、アプリを開いている間だけ記録します。
 - 記録先：`~/Library/Application Support/SystemMonitor/history.sqlite`（本人のみ読み書きできる権限）。**外部には一切送信しません。**
 - 保存期間：5 秒ごとのデータは 24 時間、1 分ごとのまとめ・アプリ別使用量・ログは 30 日。古いものは自動で削除され、容量は数十 MB 程度です。
-- 停止・削除：履歴タブの「バックグラウンド記録を停止」と「…」→「すべての履歴を削除」から行えます。
+- 停止・削除：履歴タブの「バックグラウンド記録を停止」と「…」→「履歴を削除…」（削除する種類を選べます）から行えます。
 
 ## 制限事項
 
@@ -127,7 +132,7 @@ Resources/
 
 ## セキュリティ
 
-ネットワーク通信なし・外部ライブラリなしの構成です。GitHub の CodeQL・Secret scanning に加え、コミット前と GitHub Actions で gitleaks による秘密情報の検査を行っています。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
+外部ライブラリなしの構成です。ネットワーク通信は、アップデートの確認とダウンロード（GitHub、HTTPS）のみで、記録した履歴などのデータは外部に送信しません。GitHub の CodeQL・Secret scanning に加え、コミット前と GitHub Actions で gitleaks による秘密情報の検査を行っています。管理者権限が必要な操作は、実行するコマンドを表示したうえで macOS 標準の認証ダイアログで確認します。詳しくは [SECURITY.md](SECURITY.md) をご覧ください。脆弱性の報告も SECURITY.md の手順でお願いします。
 
 ## ライセンス
 

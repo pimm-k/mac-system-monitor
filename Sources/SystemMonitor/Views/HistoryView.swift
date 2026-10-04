@@ -9,11 +9,11 @@ enum HistoryRange: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .h1: return "1時間"
-        case .h6: return "6時間"
-        case .d1: return "24時間"
-        case .d7: return "7日"
-        case .d30: return "30日"
+        case .h1: return L("1時間")
+        case .h6: return L("6時間")
+        case .d1: return L("24時間")
+        case .d7: return L("7日")
+        case .d30: return L("30日")
         }
     }
     var seconds: Int64 {
@@ -32,11 +32,11 @@ enum HistorySection: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .graphs: return "推移グラフ"
-        case .apps: return "アプリの履歴"
-        case .spikes: return "高負荷の記録"
-        case .network: return "通信の警告"
-        case .events: return "起動・終了ログ"
+        case .graphs: return L("推移グラフ")
+        case .apps: return L("アプリの履歴")
+        case .spikes: return L("高負荷の記録")
+        case .network: return L("通信の警告")
+        case .events: return L("起動・終了ログ")
         }
     }
 }
@@ -134,11 +134,11 @@ final class HistoryModel: ObservableObject {
         let age = stats.latest.map { Date().timeIntervalSince($0) } ?? .infinity
         if age < 20 {
             return agentInstalled
-                ? (.green, "バックグラウンドで記録中")
-                : (.yellow, "このアプリで記録中（アプリを閉じると停止）")
+                ? (.green, L("バックグラウンドで記録中"))
+                : (.yellow, L("このアプリで記録中（アプリを閉じると停止）"))
         }
-        if agentInstalled && !agentRunning { return (.orange, "エージェントが停止しています") }
-        return (.secondary, "記録していません")
+        if agentInstalled && !agentRunning { return (.orange, L("エージェントが停止しています")) }
+        return (.secondary, L("記録していません"))
     }
 }
 
@@ -193,14 +193,14 @@ struct HistoryView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 12) {
-                Picker("表示", selection: $model.section) {
+                Picker(L("表示"), selection: $model.section) {
                     ForEach(HistorySection.allCases) { s in Text(s.title).tag(s) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .frame(maxWidth: 600 * ui)
                 Spacer()
-                Picker("期間", selection: $model.range) {
+                Picker(L("期間"), selection: $model.range) {
                     ForEach(HistoryRange.allCases) { r in Text(r.title).tag(r) }
                 }
                 .pickerStyle(.segmented)
@@ -212,27 +212,27 @@ struct HistoryView: View {
                 Circle().fill(st.color).frame(width: 8 * ui, height: 8 * ui)
                 Text(st.text).scaledFont(.callout)
                 if let latest = model.stats.latest {
-                    Text("最終記録: \(Self.timeFormatter.string(from: latest))")
+                    Text(L("最終記録: %@", "\(Self.timeFormatter.string(from: latest))"))
                         .scaledFont(.caption).foregroundStyle(.secondary)
                 }
                 if let earliest = model.stats.earliest {
-                    Text("\(Self.dayFormatter.string(from: earliest)) から")
+                    Text(L("%@ から", "\(Self.dayFormatter.string(from: earliest))"))
                         .scaledFont(.caption).foregroundStyle(.secondary)
                 }
-                Text("保存データ \(Fmt.bytes(model.stats.fileSize))")
+                Text(L("保存データ %@", "\(Fmt.bytes(model.stats.fileSize))"))
                     .scaledFont(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button(model.agentInstalled ? "バックグラウンド記録を停止" : "バックグラウンドで記録する") {
+                Button(model.agentInstalled ? L("バックグラウンド記録を停止") : L("バックグラウンドで記録する")) {
                     toggleAgent()
                 }
-                .help("ログイン中は常に 5 秒ごとに記録します（LaunchAgent）")
+                .help(L("ログイン中は常に 5 秒ごとに記録します（LaunchAgent）"))
                 Menu {
-                    Button("保存フォルダを Finder で表示") {
+                    Button(L("保存フォルダを Finder で表示")) {
                         HistoryPaths.ensureDirectory()
                         NSWorkspace.shared.activateFileViewerSelecting([HistoryPaths.database])
                     }
                     Divider()
-                    Button("履歴を削除…", role: .destructive) { confirmDeleteBox.value = true }
+                    Button(L("履歴を削除…"), role: .destructive) { confirmDeleteBox.value = true }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -241,10 +241,10 @@ struct HistoryView: View {
                 .fixedSize()
             }
             if !model.agentInstalled {
-                Text("いまはこのアプリを開いている間だけ記録します。閉じている間も記録するには「バックグラウンドで記録する」を押してください。")
+                Text(L("いまはこのアプリを開いている間だけ記録します。閉じている間も記録するには「バックグラウンドで記録する」を押してください。"))
                     .scaledFont(.caption).foregroundStyle(.secondary)
             } else if !RecorderAgent.isInApplications {
-                Text("⚠️ このアプリが /Applications 以外から起動されています。アプリを移動するとバックグラウンド記録が止まるので、./build_app.sh --install でインストールしてから有効にしてください。")
+                Text(L("⚠️ このアプリが /Applications 以外から起動されています。アプリを移動するとバックグラウンド記録が止まるので、./build_app.sh --install でインストールしてから有効にしてください。"))
                     .scaledFont(.caption).foregroundStyle(.orange)
             }
         }
@@ -255,7 +255,7 @@ struct HistoryView: View {
     private func toggleAgent() {
         let enable = !model.agentInstalled
         if let error = model.setAgent(enabled: enable) {
-            m.alert = AlertInfo(title: "バックグラウンド記録", message: error)
+            m.alert = AlertInfo(title: L("バックグラウンド記録"), message: error)
         }
         Task { await model.refresh() }
     }
@@ -275,7 +275,7 @@ struct HistoryView: View {
     private func emptyState(_ text: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: "clock.arrow.circlepath").scaledFont(.largeTitle).foregroundStyle(.tertiary)
-            Text(model.loaded ? text : "読み込み中…").foregroundStyle(.secondary)
+            Text(model.loaded ? text : L("読み込み中…")).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -284,23 +284,23 @@ struct HistoryView: View {
 
     @ViewBuilder private var graphs: some View {
         if model.points.isEmpty {
-            emptyState("この期間の記録はまだありません。")
+            emptyState(L("この期間の記録はまだありません。"))
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     HistoryChart(title: "CPU", unit: .percent, points: model.points, hoverTs: $model.hoverTs,
                                  series: [HistorySeries(id: "CPU", color: Palette.cpu, key: \.cpu)])
-                    HistoryChart(title: "メモリ", unit: .percent, points: model.points, hoverTs: $model.hoverTs,
-                                 series: [HistorySeries(id: "メモリ", color: Palette.memory, key: \.mem)])
-                    HistoryChart(title: "ディスク", unit: .bytesPerSec, points: model.points, hoverTs: $model.hoverTs,
-                                 series: [HistorySeries(id: "読み取り", color: Palette.disk, key: \.diskR),
-                                          HistorySeries(id: "書き込み", color: Palette.disk.opacity(0.45), key: \.diskW)])
-                    HistoryChart(title: "ネットワーク", unit: .bitsPerSec, points: model.points, hoverTs: $model.hoverTs,
-                                 series: [HistorySeries(id: "受信", color: Palette.network, key: \.netRx),
-                                          HistorySeries(id: "送信", color: Palette.network.opacity(0.45), key: \.netTx)])
+                    HistoryChart(title: L("メモリ"), unit: .percent, points: model.points, hoverTs: $model.hoverTs,
+                                 series: [HistorySeries(id: L("メモリ"), color: Palette.memory, key: \.mem)])
+                    HistoryChart(title: L("ディスク"), unit: .bytesPerSec, points: model.points, hoverTs: $model.hoverTs,
+                                 series: [HistorySeries(id: L("読み取り"), color: Palette.disk, key: \.diskR),
+                                          HistorySeries(id: L("書き込み"), color: Palette.disk.opacity(0.45), key: \.diskW)])
+                    HistoryChart(title: L("ネットワーク"), unit: .bitsPerSec, points: model.points, hoverTs: $model.hoverTs,
+                                 series: [HistorySeries(id: L("受信"), color: Palette.network, key: \.netRx),
+                                          HistorySeries(id: L("送信"), color: Palette.network.opacity(0.45), key: \.netTx)])
                     HistoryChart(title: "GPU", unit: .percent, points: model.points, hoverTs: $model.hoverTs,
                                  series: [HistorySeries(id: "GPU", color: Palette.gpu, key: \.gpu)])
-                    Text("記録が途切れている時間（Mac のスリープ中など）は線が切れて表示されます。")
+                    Text(L("記録が途切れている時間（Mac のスリープ中など）は線が切れて表示されます。"))
                         .scaledFont(.caption).foregroundStyle(.secondary)
                 }
                 .padding(16)
@@ -318,11 +318,11 @@ struct HistoryView: View {
 
     @ViewBuilder private var appsTable: some View {
         if model.apps.isEmpty {
-            emptyState("この期間のアプリの記録はまだありません。")
+            emptyState(L("この期間のアプリの記録はまだありません。"))
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 Table(filteredApps, sortOrder: $appSortBox.value) {
-                    TableColumn("名前", value: \.name) { a in
+                    TableColumn(L("名前"), value: \.name) { a in
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: a.path,
                                                                  bundlePath: a.path.hasSuffix(".app") ? a.path : nil))
@@ -331,24 +331,24 @@ struct HistoryView: View {
                         }
                     }
                     .width(min: 200 * ui, ideal: 280 * ui)
-                    TableColumn("CPU 時間", value: \.cpuSec) { a in
+                    TableColumn(L("CPU 時間"), value: \.cpuSec) { a in
                         Text(Fmt.cpuTime(a.cpuSec)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    TableColumn("ディスク", value: \.diskBytes) { a in
+                    TableColumn(L("ディスク"), value: \.diskBytes) { a in
                         Text(Fmt.bytes(a.diskBytes)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    TableColumn("最大メモリ", value: \.memPeak) { a in
+                    TableColumn(L("最大メモリ"), value: \.memPeak) { a in
                         Text(Fmt.bytes(a.memPeak)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
-                    TableColumn("動作していた時間", value: \.activeBuckets) { a in
+                    TableColumn(L("動作していた時間"), value: \.activeBuckets) { a in
                         Text(Self.minutesText(a.activeMinutes)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
-                Text("10 分単位で集計しています。ヘルパー プロセスは所属するアプリにまとめています。他ユーザー (root) のプロセスのディスク量は取得できません。")
+                Text(L("10 分単位で集計しています。ヘルパー プロセスは所属するアプリにまとめています。他ユーザー (root) のプロセスのディスク量は取得できません。"))
                     .scaledFont(.caption).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
             }
@@ -356,15 +356,15 @@ struct HistoryView: View {
     }
 
     private static func minutesText(_ m: Int) -> String {
-        if m < 60 { return "約 \(m) 分" }
-        return "約 \(m / 60) 時間 \(m % 60) 分"
+        if m < 60 { return L("約 %@ 分", "\(m)") }
+        return L("約 %@ 時間 %@ 分", "\(m / 60)", "\(m % 60)")
     }
 
     // MARK: 高負荷の記録
 
     @ViewBuilder private var spikesList: some View {
         if model.spikes.isEmpty {
-            emptyState("この期間に高負荷の記録はありません。\n（CPU \(Int(HistoryRecorder.cpuSpikeThreshold))% 以上 / メモリ \(Int(HistoryRecorder.memSpikeThreshold))% 以上で記録）")
+            emptyState(L("この期間に高負荷の記録はありません。\n（CPU %@%% 以上 / メモリ %@%% 以上で記録）", "\(Int(HistoryRecorder.cpuSpikeThreshold))", "\(Int(HistoryRecorder.memSpikeThreshold))"))
         } else {
             List {
                 Section {
@@ -376,7 +376,7 @@ struct HistoryView: View {
                                 .frame(width: 28 * ui)
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
-                                    Text(s.kind == "cpu" ? "CPU \(Int(s.value))%" : "メモリ \(Int(s.value))%")
+                                    Text(s.kind == "cpu" ? "CPU \(Int(s.value))%" : L("メモリ %@%%", "\(Int(s.value))"))
                                         .scaledFont(.headline)
                                     Text(Self.timeFormatter.string(from: s.date))
                                         .foregroundStyle(.secondary)
@@ -391,7 +391,7 @@ struct HistoryView: View {
                         .padding(.vertical, 4)
                     }
                 } footer: {
-                    Text("CPU \(Int(HistoryRecorder.cpuSpikeThreshold))% 以上、またはメモリ \(Int(HistoryRecorder.memSpikeThreshold))% 以上になったときに、その時点の上位 5 プロセスを記録します（同じ種類は 2 分に 1 回まで）。")
+                    Text(L("CPU %@%% 以上、またはメモリ %@%% 以上になったときに、その時点の上位 5 プロセスを記録します（同じ種類は 2 分に 1 回まで）。", "\(Int(HistoryRecorder.cpuSpikeThreshold))", "\(Int(HistoryRecorder.memSpikeThreshold))"))
                 }
             }
         }
@@ -410,25 +410,25 @@ struct HistoryView: View {
 
     private var netSettings: some View {
         HStack(spacing: 16) {
-            Toggle("怪しい通信を通知する", isOn: Binding(
+            Toggle(L("怪しい通信を通知する"), isOn: Binding(
                 get: { netEnabledBox.value },
                 set: { v in
                     netEnabledBox.value = v
                     NetAlertSettings.enabled = v
                     if v { Notifier.requestAuthorization() }
                 }))
-            Toggle("大量の送信も通知する", isOn: Binding(
+            Toggle(L("大量の送信も通知する"), isOn: Binding(
                 get: { netUploadBox.value },
                 set: { v in netUploadBox.value = v; NetAlertSettings.upload = v }))
                 .disabled(!netEnabledBox.value)
             Spacer()
             if !ignoredBox.value.isEmpty {
-                Button("通知しない設定を解除 (\(ignoredBox.value.count) 件)") {
+                Button(L("通知しない設定を解除 (%@ 件)", "\(ignoredBox.value.count)")) {
                     ignoredBox.value = []
                     NetAlertSettings.ignored = []
                 }
             }
-            Button("通知の設定…") {
+            Button(L("通知の設定…")) {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
                     NSWorkspace.shared.open(url)
                 }
@@ -441,9 +441,9 @@ struct HistoryView: View {
     private var netFooter: some View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(NetRule.allCases, id: \.self) { r in
-                Text("・\(r.title)：\(r.explanation)")
+                Text(L("・%@：%@", "\(r.title)", "\(r.explanation)"))
             }
-            Text("あなたのユーザーで動いているプロセスを 15 秒ごとに確認します（root のプロセスは対象外）。目安の判定のため、正常なアプリが通知されることもあります。同じ内容は 6 時間に 1 回まで通知します。")
+            Text(L("あなたのユーザーで動いているプロセスを 15 秒ごとに確認します（root のプロセスは対象外）。目安の判定のため、正常なアプリが通知されることもあります。同じ内容は 6 時間に 1 回まで通知します。"))
         }
         .scaledFont(.caption).foregroundStyle(.secondary)
     }
@@ -456,8 +456,8 @@ struct HistoryView: View {
                 VStack(spacing: 12) {
                     Spacer()
                     Image(systemName: "checkmark.shield").scaledFont(.largeTitle).foregroundStyle(.green)
-                    Text(model.loaded ? (netEnabledBox.value ? "この期間に怪しい通信は見つかっていません。" : "怪しい通信の通知はオフです。")
-                                      : "読み込み中…")
+                    Text(model.loaded ? (netEnabledBox.value ? L("この期間に怪しい通信は見つかっていません。") : L("怪しい通信の通知はオフです。"))
+                                      : L("読み込み中…"))
                         .foregroundStyle(.secondary)
                     netFooter.frame(maxWidth: 640 * ui)
                     Spacer()
@@ -504,11 +504,11 @@ struct HistoryView: View {
                 Text(a.detail).scaledFont(.callout).foregroundStyle(.secondary).textSelection(.enabled)
                 if !a.path.isEmpty {
                     HStack(spacing: 12) {
-                        Button("Finder で表示") { m.revealInFinder(path: a.path) }
+                        Button(L("Finder で表示")) { m.revealInFinder(path: a.path) }
                         if ignoredBox.value.contains(ignoreKey) {
-                            Text("今後は通知しません").foregroundStyle(.secondary)
+                            Text(L("今後は通知しません")).foregroundStyle(.secondary)
                         } else {
-                            Button("このプログラムのこの種類は今後通知しない") {
+                            Button(L("このプログラムのこの種類は今後通知しない")) {
                                 ignoredBox.value.insert(ignoreKey)
                                 NetAlertSettings.ignored = ignoredBox.value
                             }
@@ -535,20 +535,20 @@ struct HistoryView: View {
 
     @ViewBuilder private var eventsTable: some View {
         if model.events.isEmpty {
-            emptyState("この期間の起動・終了の記録はまだありません。")
+            emptyState(L("この期間の起動・終了の記録はまだありません。"))
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 Table(filteredEvents, sortOrder: $eventSortBox.value) {
-                    TableColumn("時刻", value: \.ts) { e in
+                    TableColumn(L("時刻"), value: \.ts) { e in
                         Text(Self.timeFormatter.string(from: e.date)).monospacedDigit()
                     }
                     .width(min: 100 * ui, ideal: 120 * ui)
-                    TableColumn("種類", value: \.kindText) { e in
+                    TableColumn(L("種類"), value: \.kindText) { e in
                         Label(e.kindText, systemImage: e.started ? "play.circle.fill" : "stop.circle")
                             .foregroundStyle(e.started ? Color.green : Color.secondary)
                     }
                     .width(min: 60 * ui, ideal: 70 * ui)
-                    TableColumn("名前", value: \.name) { e in
+                    TableColumn(L("名前"), value: \.name) { e in
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: e.path, bundlePath: nil))
                                 .resizable().frame(width: 16 * ui, height: 16 * ui)
@@ -558,12 +558,12 @@ struct HistoryView: View {
                     .width(min: 160 * ui, ideal: 220 * ui)
                     TableColumn("PID", value: \.pid) { e in Text(String(e.pid)).monospacedDigit() }
                         .width(min: 45 * ui, ideal: 60 * ui)
-                    TableColumn("ユーザー", value: \.user).width(min: 60 * ui, ideal: 90 * ui)
-                    TableColumn("パス", value: \.path) { e in
+                    TableColumn(L("ユーザー"), value: \.user).width(min: 60 * ui, ideal: 90 * ui)
+                    TableColumn(L("パス"), value: \.path) { e in
                         Text(e.path).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     }
                 }
-                Text("5 秒ごとの比較で記録しているため、5 秒未満で終了したプロセスは記録されないことがあります。最新 5,000 件まで表示します。")
+                Text(L("5 秒ごとの比較で記録しているため、5 秒未満で終了したプロセスは記録されないことがあります。最新 5,000 件まで表示します。"))
                     .scaledFont(.caption).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
             }
@@ -633,7 +633,7 @@ struct HistoryChart: View {
                     ForEach(series) { s in
                         let values = points.map { $0[keyPath: s.key] }
                         let avg = values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count)
-                        Text("\(s.id) 平均 \(unit.format(avg)) / 最大 \(unit.format(values.max() ?? 0))")
+                        Text(L("%@ 平均 %@ / 最大 %@", "\(s.id)", "\(unit.format(avg))", "\(unit.format(values.max() ?? 0))"))
                             .scaledFont(.caption, mono: true)
                             .foregroundStyle(.secondary)
                     }
@@ -648,16 +648,16 @@ struct HistoryChart: View {
             ForEach(series) { s in
                 ForEach(points) { p in
                     LineMark(
-                        x: .value("時刻", p.date),
+                        x: .value(L("時刻"), p.date),
                         y: .value(s.id, p[keyPath: s.key]),
-                        series: .value("系列", "\(s.id)-\(p.segment)")
+                        series: .value(L("系列"), "\(s.id)-\(p.segment)")
                     )
                     .foregroundStyle(s.color)
                     .lineStyle(StrokeStyle(lineWidth: 1.4))
                 }
             }
             if let h = hovered {
-                RuleMark(x: .value("時刻", h.date))
+                RuleMark(x: .value(L("時刻"), h.date))
                     .foregroundStyle(Color.secondary.opacity(0.6))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
             }
@@ -722,7 +722,7 @@ private struct DeleteHistorySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("削除する履歴を選んでください").font(.headline)
+            Text(L("削除する履歴を選んでください")).font(.headline)
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(HistoryDataKind.allCases) { k in
                     Toggle(isOn: Binding(
@@ -745,18 +745,18 @@ private struct DeleteHistorySheet: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
 
-            Text("削除した履歴は元に戻せません。")
+            Text(L("削除した履歴は元に戻せません。"))
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack {
-                Button(allSelected ? "選択をすべて解除" : "すべて選択") {
+                Button(allSelected ? L("選択をすべて解除") : L("すべて選択")) {
                     selectedBox.value = allSelected ? [] : Set(HistoryDataKind.allCases)
                 }
                 Spacer()
                 if deletingBox.value { ProgressView().controlSize(.small) }
-                Button("キャンセル") { dismiss() }
+                Button(L("キャンセル")) { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Button("削除…", role: .destructive) { confirmBox.value = true }
+                Button(L("削除…"), role: .destructive) { confirmBox.value = true }
                     .keyboardShortcut(.defaultAction)
                     .disabled(selected.isEmpty || deletingBox.value)
             }
@@ -765,7 +765,7 @@ private struct DeleteHistorySheet: View {
         .frame(width: 440)
         .task { countsBox.value = await model.counts() }
         .confirmationDialog(confirmTitle, isPresented: $confirmBox.value) {
-            Button("削除", role: .destructive) {
+            Button(L("削除"), role: .destructive) {
                 let kinds = selected
                 deletingBox.value = true
                 Task {
@@ -775,17 +775,17 @@ private struct DeleteHistorySheet: View {
                 }
             }
         } message: {
-            Text(HistoryDataKind.allCases.filter { selected.contains($0) }.map { "・" + $0.title }.joined(separator: "\n")
-                 + "\n\nこの操作は元に戻せません。")
+            Text(HistoryDataKind.allCases.filter { selected.contains($0) }.map { L("・") + $0.title }.joined(separator: "\n")
+                 + L("\n\nこの操作は元に戻せません。"))
         }
     }
 
     private var confirmTitle: String {
-        allSelected ? "すべての履歴を削除しますか？" : "選んだ \(selected.count) 種類の履歴を削除しますか？"
+        allSelected ? L("すべての履歴を削除しますか？") : L("選んだ %@ 種類の履歴を削除しますか？", "\(selected.count)")
     }
 
     private func countText(_ k: HistoryDataKind) -> String {
         guard let c = countsBox.value?[k] else { return "" }
-        return k == .graphs ? "（\(c) 分ぶん）" : "（\(c) 件）"
+        return k == .graphs ? L("（%@ 分ぶん）", "\(c)") : L("（%@ 件）", "\(c)")
     }
 }
