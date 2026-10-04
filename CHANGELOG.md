@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-10-04
+
 ### 追加
 - アプリ内アップデート：起動時（1 日 1 回）または「アップデートを確認…」で GitHub Releases の新しいバージョンを確認し、ワンクリックで更新・再起動
   - ダウンロード元を github.com に限定し、SHA-256・バンドル ID・バージョン・コード署名を確認してから置き換え（失敗時は元に戻す）
@@ -116,7 +118,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...v2.0.0
 [1.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.0...v1.4.1
