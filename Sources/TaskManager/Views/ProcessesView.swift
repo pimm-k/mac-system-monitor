@@ -19,6 +19,7 @@ struct ProcRow: Identifiable, Hashable {
 
 @MainActor
 struct ProcessesView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     let search: String
 
@@ -58,29 +59,29 @@ struct ProcessesView: View {
             TableColumn("名前", value: \.name) { row in
                 NameCell(row: row, expanded: expanded.contains(row.pid)) { toggle(row.pid) }
             }
-            .width(min: 240, ideal: 340)
+            .width(min: 240 * ui, ideal: 340 * ui)
 
             TableColumn("状態", value: \.status) { row in
                 Text(row.status).foregroundStyle(.secondary)
             }
-            .width(min: 40, ideal: 60)
+            .width(min: 40 * ui, ideal: 60 * ui)
 
             TableColumn(cpuTitle, value: \.cpu) { row in
                 HeatCell(text: row.kind == .header ? "" : Fmt.percent(row.cpu), level: row.cpu / 40)
             }
-            .width(min: 80, ideal: 95)
+            .width(min: 80 * ui, ideal: 95 * ui)
 
             TableColumn(memTitle, value: \.memory) { row in
                 HeatCell(text: row.kind == .header ? "" : Fmt.bytes(row.memory),
                          level: Double(row.memory) / total * 8)
             }
-            .width(min: 90, ideal: 110)
+            .width(min: 90 * ui, ideal: 110 * ui)
 
             TableColumn(diskTitle, value: \.disk) { row in
                 HeatCell(text: row.kind == .header ? "" : String(format: "%.1f MB/秒", row.disk / 1_048_576),
                          level: row.disk / 20_000_000)
             }
-            .width(min: 90, ideal: 110)
+            .width(min: 90 * ui, ideal: 110 * ui)
         }
         .contextMenu(forSelectionType: String.self) { ids in
             let targets = rows.filter { ids.contains($0.id) && $0.kind != .header }
@@ -207,29 +208,30 @@ struct ProcessesView: View {
 
 @MainActor
 private struct NameCell: View {
+    @Environment(\.uiScale) private var ui
     let row: ProcRow
     let expanded: Bool
     let toggle: () -> Void
 
     var body: some View {
         if row.kind == .header {
-            Text(row.name).font(.headline).padding(.top, 6)
+            Text(row.name).scaledFont(.headline).padding(.top, 6)
         } else {
             HStack(spacing: 6) {
-                if row.kind == .child { Spacer().frame(width: 16) }
+                if row.kind == .child { Spacer().frame(width: 16 * ui) }
                 if row.childCount > 0 {
                     Button(action: toggle) {
                         Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                            .font(.system(size: 9, weight: .bold))
-                            .frame(width: 12)
+                            .scaledFont(size: 9, weight: .bold)
+                            .frame(width: 12 * ui)
                     }
                     .buttonStyle(.plain)
                 } else {
-                    Spacer().frame(width: 12)
+                    Spacer().frame(width: 12 * ui)
                 }
                 Image(nsImage: IconCache.shared.icon(path: row.path, bundlePath: row.bundlePath))
                     .resizable()
-                    .frame(width: 16, height: 16)
+                    .frame(width: 16 * ui, height: 16 * ui)
                 Text(row.name).lineLimit(1)
                 if row.childCount > 0 {
                     Text("(\(row.childCount + 1))").foregroundStyle(.secondary)

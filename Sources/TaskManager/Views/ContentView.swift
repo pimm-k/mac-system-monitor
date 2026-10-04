@@ -10,6 +10,13 @@ struct ContentView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
+            mainView(scale: m.uiScale(forWidth: geo.size.width))
+        }
+        .task { await m.run() }
+    }
+
+    private func mainView(scale: CGFloat) -> some View {
         NavigationSplitView {
             List {
                 ForEach(Tab.allCases) { t in
@@ -20,7 +27,7 @@ struct ContentView: View {
                 }
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 210, max: 260)
+            .navigationSplitViewColumnWidth(min: 180 * scale, ideal: 210 * scale, max: 300 * scale)
             .safeAreaInset(edge: .bottom) {
                 SidebarFooter()
             }
@@ -46,6 +53,11 @@ struct ContentView: View {
                         ForEach(UpdateSpeed.allCases) { s in Text(s.title).tag(s) }
                     }
                     Divider()
+                    Toggle("ウィンドウの大きさに合わせて拡大", isOn: $m.autoScale)
+                    Button("拡大") { m.zoomIn() }
+                    Button("縮小") { m.zoomOut() }
+                    Button("実際のサイズ（\(Int((m.zoom * 100).rounded()))% → 100%）") { m.zoomReset() }
+                    Divider()
                     Toggle("常に手前に表示", isOn: $m.alwaysOnTop)
                 } label: {
                     Label("オプション", systemImage: "ellipsis.circle")
@@ -68,12 +80,15 @@ struct ContentView: View {
                 Text(info.message)
             }
         }
-        .task { await m.run() }
+        .environment(\.uiScale, scale)
+        .font(.system(size: 13 * scale))
+        .controlSize(scale >= 1.35 ? .large : .regular)
     }
 }
 
 @MainActor
 private struct SidebarFooter: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -88,7 +103,7 @@ private struct SidebarFooter: View {
                     .help("コミット: \(AppVersion.commit ?? "—")")
                     .padding(.top, 2)
             }
-            .font(.caption)
+            .scaledFont(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 12)
         }
@@ -99,6 +114,7 @@ private struct SidebarFooter: View {
 /// サイドバーの項目 (クリックで確実にタブを切り替える)
 @MainActor
 private struct SidebarButton: View {
+    @Environment(\.uiScale) private var ui
     let tab: Tab
     let selected: Bool
     let action: () -> Void
@@ -117,7 +133,7 @@ private struct SidebarButton: View {
                     if selected {
                         RoundedRectangle(cornerRadius: 1.5)
                             .fill(Color.accentColor)
-                            .frame(width: 3, height: 16)
+                            .frame(width: 3 * ui, height: 16 * ui)
                     }
                 }
                 .contentShape(Rectangle())

@@ -78,6 +78,10 @@ final class Monitor: ObservableObject {
         static let tab = "lastTab"
         static let perfItem = "lastPerformanceItem"
         static let cpuGraphMode = "cpuGraphMode"
+        static let zoom = "uiZoom"
+        static let autoScale = "uiAutoScale"
+        static let cpuGrouping = "cpuGrouping"
+        static let cpuColumns = "cpuColumns"
     }
 
     /// 選択中のタブ
@@ -89,6 +93,35 @@ final class Monitor: ObservableObject {
         didSet { UserDefaults.standard.set(perfItem.key, forKey: Keys.perfItem) }
     }
     /// CPU グラフの表示モード (全体 / 論理プロセッサ)
+    /// 手動の拡大率 (⌘+ / ⌘− / ⌘0)。1.0 = 標準
+    @Published var zoom: Double = {
+        let v = UserDefaults.standard.double(forKey: Keys.zoom)
+        return v == 0 ? 1.0 : v
+    }() {
+        didSet { UserDefaults.standard.set(zoom, forKey: Keys.zoom) }
+    }
+    /// ウィンドウの大きさに合わせて自動で拡大するか
+    @Published var autoScale: Bool = UserDefaults.standard.object(forKey: Keys.autoScale) as? Bool ?? true {
+        didSet { UserDefaults.standard.set(autoScale, forKey: Keys.autoScale) }
+    }
+    /// 論理プロセッサの並べ方 (まとめて / 高性能・高効率で分ける)
+    @Published var cpuGrouping: CPUGrouping = CPUGrouping(rawValue: UserDefaults.standard.string(forKey: Keys.cpuGrouping) ?? "") ?? .coreType {
+        didSet { UserDefaults.standard.set(cpuGrouping.rawValue, forKey: Keys.cpuGrouping) }
+    }
+    /// 論理プロセッサの列数 (0 = 自動)
+    @Published var cpuColumns: Int = UserDefaults.standard.integer(forKey: Keys.cpuColumns) {
+        didSet { UserDefaults.standard.set(cpuColumns, forKey: Keys.cpuColumns) }
+    }
+
+    /// 表示倍率 = ウィンドウ幅による自動倍率 × 手動の拡大率
+    func uiScale(forWidth width: CGFloat) -> CGFloat {
+        let auto: CGFloat = autoScale ? min(max(width / 1000, 1.0), 1.8) : 1.0
+        return auto * CGFloat(zoom)
+    }
+    func zoomIn() { zoom = min(2.0, ((zoom + 0.1) * 10).rounded() / 10) }
+    func zoomOut() { zoom = max(0.7, ((zoom - 0.1) * 10).rounded() / 10) }
+    func zoomReset() { zoom = 1.0 }
+
     @Published var cpuGraphMode: CPUGraphMode = CPUGraphMode(rawValue: UserDefaults.standard.string(forKey: Keys.cpuGraphMode) ?? "") ?? .overall {
         didSet { UserDefaults.standard.set(cpuGraphMode.rawValue, forKey: Keys.cpuGraphMode) }
     }

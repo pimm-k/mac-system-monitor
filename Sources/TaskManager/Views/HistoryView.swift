@@ -136,6 +136,7 @@ final class HistoryModel: ObservableObject {
 
 @MainActor
 struct HistoryView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     let search: String
 
@@ -186,29 +187,29 @@ struct HistoryView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 480)
+                .frame(maxWidth: 480 * ui)
                 Spacer()
                 Picker("期間", selection: $model.range) {
                     ForEach(HistoryRange.allCases) { r in Text(r.title).tag(r) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 300)
+                .frame(width: 300 * ui)
             }
             HStack(spacing: 10) {
                 let st = model.status
-                Circle().fill(st.color).frame(width: 8, height: 8)
-                Text(st.text).font(.callout)
+                Circle().fill(st.color).frame(width: 8 * ui, height: 8 * ui)
+                Text(st.text).scaledFont(.callout)
                 if let latest = model.stats.latest {
                     Text("最終記録: \(Self.timeFormatter.string(from: latest))")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .scaledFont(.caption).foregroundStyle(.secondary)
                 }
                 if let earliest = model.stats.earliest {
                     Text("\(Self.dayFormatter.string(from: earliest)) から")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .scaledFont(.caption).foregroundStyle(.secondary)
                 }
                 Text("保存データ \(Fmt.bytes(model.stats.fileSize))")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button(model.agentInstalled ? "バックグラウンド記録を停止" : "バックグラウンドで記録する") {
                     toggleAgent()
@@ -230,10 +231,10 @@ struct HistoryView: View {
             }
             if !model.agentInstalled {
                 Text("いまはこのアプリを開いている間だけ記録します。閉じている間も記録するには「バックグラウンドで記録する」を押してください。")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary)
             } else if !RecorderAgent.isInApplications {
                 Text("⚠️ このアプリが /Applications 以外から起動されています。アプリを移動するとバックグラウンド記録が止まるので、./build_app.sh --install でインストールしてから有効にしてください。")
-                    .font(.caption).foregroundStyle(.orange)
+                    .scaledFont(.caption).foregroundStyle(.orange)
             }
         }
         .padding(.horizontal, 16)
@@ -261,7 +262,7 @@ struct HistoryView: View {
 
     private func emptyState(_ text: String) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: "clock.arrow.circlepath").font(.largeTitle).foregroundStyle(.tertiary)
+            Image(systemName: "clock.arrow.circlepath").scaledFont(.largeTitle).foregroundStyle(.tertiary)
             Text(model.loaded ? text : "読み込み中…").foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -288,7 +289,7 @@ struct HistoryView: View {
                     HistoryChart(title: "GPU", unit: .percent, points: model.points, hoverTs: $model.hoverTs,
                                  series: [HistorySeries(id: "GPU", color: Palette.gpu, key: \.gpu)])
                     Text("記録が途切れている時間（Mac のスリープ中など）は線が切れて表示されます。")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .scaledFont(.caption).foregroundStyle(.secondary)
                 }
                 .padding(16)
             }
@@ -313,11 +314,11 @@ struct HistoryView: View {
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: a.path,
                                                                  bundlePath: a.path.hasSuffix(".app") ? a.path : nil))
-                                .resizable().frame(width: 16, height: 16)
+                                .resizable().frame(width: 16 * ui, height: 16 * ui)
                             Text(a.name).lineLimit(1)
                         }
                     }
-                    .width(min: 200, ideal: 280)
+                    .width(min: 200 * ui, ideal: 280 * ui)
                     TableColumn("CPU 時間", value: \.cpuSec) { a in
                         Text(Fmt.cpuTime(a.cpuSec)).monospacedDigit()
                             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -336,7 +337,7 @@ struct HistoryView: View {
                     }
                 }
                 Text("10 分単位で集計しています。ヘルパー プロセスは所属するアプリにまとめています。他ユーザー (root) のプロセスのディスク量は取得できません。")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
             }
         }
@@ -358,19 +359,19 @@ struct HistoryView: View {
                     ForEach(model.spikes) { s in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: s.kind == "cpu" ? "cpu" : "memorychip")
-                                .font(.title2)
+                                .scaledFont(.title2)
                                 .foregroundStyle(s.kind == "cpu" ? Palette.cpu : Palette.memory)
-                                .frame(width: 28)
+                                .frame(width: 28 * ui)
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
                                     Text(s.kind == "cpu" ? "CPU \(Int(s.value))%" : "メモリ \(Int(s.value))%")
-                                        .font(.headline)
+                                        .scaledFont(.headline)
                                     Text(Self.timeFormatter.string(from: s.date))
                                         .foregroundStyle(.secondary)
                                 }
                                 ForEach(Array(s.top.enumerated()), id: \.offset) { item in
                                     Text("\(item.offset + 1). \(item.element)")
-                                        .font(.callout.monospacedDigit())
+                                        .scaledFont(.callout, mono: true)
                                         .foregroundStyle(item.offset == 0 ? Color.primary : Color.secondary)
                                 }
                             }
@@ -404,29 +405,29 @@ struct HistoryView: View {
                     TableColumn("時刻", value: \.ts) { e in
                         Text(Self.timeFormatter.string(from: e.date)).monospacedDigit()
                     }
-                    .width(min: 100, ideal: 120)
+                    .width(min: 100 * ui, ideal: 120 * ui)
                     TableColumn("種類", value: \.kindText) { e in
                         Label(e.kindText, systemImage: e.started ? "play.circle.fill" : "stop.circle")
                             .foregroundStyle(e.started ? Color.green : Color.secondary)
                     }
-                    .width(min: 60, ideal: 70)
+                    .width(min: 60 * ui, ideal: 70 * ui)
                     TableColumn("名前", value: \.name) { e in
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: e.path, bundlePath: nil))
-                                .resizable().frame(width: 16, height: 16)
+                                .resizable().frame(width: 16 * ui, height: 16 * ui)
                             Text(e.name).lineLimit(1)
                         }
                     }
-                    .width(min: 160, ideal: 220)
+                    .width(min: 160 * ui, ideal: 220 * ui)
                     TableColumn("PID", value: \.pid) { e in Text(String(e.pid)).monospacedDigit() }
-                        .width(min: 45, ideal: 60)
-                    TableColumn("ユーザー", value: \.user).width(min: 60, ideal: 90)
+                        .width(min: 45 * ui, ideal: 60 * ui)
+                    TableColumn("ユーザー", value: \.user).width(min: 60 * ui, ideal: 90 * ui)
                     TableColumn("パス", value: \.path) { e in
                         Text(e.path).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                     }
                 }
                 Text("5 秒ごとの比較で記録しているため、5 秒未満で終了したプロセスは記録されないことがあります。最新 5,000 件まで表示します。")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .scaledFont(.caption).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
             }
         }
@@ -455,6 +456,7 @@ enum HistoryUnit {
 
 @MainActor
 struct HistoryChart: View {
+    @Environment(\.uiScale) private var ui
     let title: String
     let unit: HistoryUnit
     let points: [HistoryPoint]
@@ -476,31 +478,31 @@ struct HistoryChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(title).font(.headline)
+                Text(title).scaledFont(.headline)
                 ForEach(series) { s in
                     HStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 1).fill(s.color).frame(width: 12, height: 3)
-                        Text(s.id).font(.caption).foregroundStyle(.secondary)
+                        RoundedRectangle(cornerRadius: 1).fill(s.color).frame(width: 12 * ui, height: 3 * ui)
+                        Text(s.id).scaledFont(.caption).foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
                 if let h = hovered {
-                    Text(Self.hoverFormatter.string(from: h.date)).font(.caption).foregroundStyle(.secondary)
+                    Text(Self.hoverFormatter.string(from: h.date)).scaledFont(.caption).foregroundStyle(.secondary)
                     ForEach(series) { s in
                         Text("\(s.id) \(unit.format(h[keyPath: s.key]))")
-                            .font(.caption.monospacedDigit())
+                            .scaledFont(.caption, mono: true)
                     }
                 } else {
                     ForEach(series) { s in
                         let values = points.map { $0[keyPath: s.key] }
                         let avg = values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count)
                         Text("\(s.id) 平均 \(unit.format(avg)) / 最大 \(unit.format(values.max() ?? 0))")
-                            .font(.caption.monospacedDigit())
+                            .scaledFont(.caption, mono: true)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            chart.frame(height: 140)
+            chart.frame(height: 140 * ui)
         }
     }
 
@@ -530,7 +532,7 @@ struct HistoryChart: View {
                 AxisGridLine()
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
-                        Text(unit.format(v)).font(.caption2)
+                        Text(unit.format(v)).scaledFont(.caption2)
                     }
                 }
             }

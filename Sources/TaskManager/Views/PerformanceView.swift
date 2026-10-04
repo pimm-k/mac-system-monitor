@@ -29,6 +29,25 @@ enum PerfItem: Hashable {
     }
 }
 
+/// 論理プロセッサの並べ方
+enum CPUGrouping: String, CaseIterable, Identifiable {
+    case all, coreType
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .all: return "まとめて表示"
+        case .coreType: return "高性能 / 高効率で分ける"
+        }
+    }
+}
+
+/// 論理プロセッサのまとまり (例: 高性能コア 4 個 / 高効率コア 4 個)
+struct CoreGroup: Identifiable {
+    let id: String
+    let title: String?
+    let indices: [Int]
+}
+
 enum CPUGraphMode: String, CaseIterable, Identifiable {
     case overall, logical
     var id: String { rawValue }
@@ -42,6 +61,7 @@ enum CPUGraphMode: String, CaseIterable, Identifiable {
 
 @MainActor
 struct PerformanceView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     /// 選択中の項目 (Monitor 経由で保存され、次回起動時に復元される)
     private var selected: PerfItem {
@@ -59,7 +79,7 @@ struct PerformanceView: View {
             ScrollView {
                 VStack(spacing: 4) { cards }.padding(8)
             }
-            .frame(width: 250)
+            .frame(width: 250 * ui)
             Divider()
             ScrollView {
                 detail
@@ -97,10 +117,10 @@ struct PerformanceView: View {
         return Button { selected = item } label: {
             HStack(spacing: 10) {
                 LineGraph(series: series, maxValue: maxV, frameColor: color, gridDivisions: 0)
-                    .frame(width: 72, height: 48)
+                    .frame(width: 72 * ui, height: 48 * ui)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.headline).lineLimit(1)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    Text(title).scaledFont(.headline).lineLimit(1)
+                    Text(subtitle).scaledFont(.caption).foregroundStyle(.secondary).lineLimit(2)
                 }
                 Spacer(minLength: 0)
             }
@@ -127,20 +147,20 @@ struct PerformanceView: View {
 
     private func header(_ title: String, _ sub: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.system(size: 30, weight: .semibold))
+            Text(title).scaledFont(size: 30, weight: .semibold)
             Spacer()
-            Text(sub).font(.title3).foregroundStyle(.secondary).lineLimit(1)
+            Text(sub).scaledFont(.title3).foregroundStyle(.secondary).lineLimit(1)
         }
     }
 
     private func axis(_ top: String, _ right: String = "100%") -> some View {
         HStack { Text(top); Spacer(); Text(right) }
-            .font(.caption).foregroundStyle(.secondary)
+            .scaledFont(.caption).foregroundStyle(.secondary)
     }
 
     private var bottomAxis: some View {
         HStack { Text("60 秒"); Spacer(); Text("0") }
-            .font(.caption).foregroundStyle(.secondary)
+            .scaledFont(.caption).foregroundStyle(.secondary)
     }
 
     // CPU
@@ -157,7 +177,7 @@ struct PerformanceView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(width: 260)
+                .frame(width: 260 * ui)
 
                 Spacer()
             }
@@ -169,7 +189,7 @@ struct PerformanceView: View {
                     axis("% 使用率")
                     LineGraph(series: [GraphSeries(values: m.cpuHistory, color: Palette.cpu)],
                               maxValue: 100, frameColor: Palette.cpu)
-                        .frame(height: 300)
+                        .frame(height: 300 * ui)
                     bottomAxis
                 }
             }
@@ -211,25 +231,82 @@ struct PerformanceView: View {
 
     /// 論理プロセッサの一覧 (クリックで拡大)
     private var coreGrid: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            axis("% 使用率 (論理プロセッサごと)")
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 6)], spacing: 6) {
-                ForEach(0..<m.coreHistory.count, id: \.self) { i in
-                    LineGraph(series: [GraphSeries(values: m.coreHistory[i], color: Palette.cpu)],
-                                  maxValue: 100, frameColor: Palette.cpu, gridDivisions: 4)
-                            .frame(height: 86)
-                            .overlay(alignment: .topLeading) {
-                                Text("CPU \(i)  \(coreKind(i))")
-                                    .font(.caption2).foregroundStyle(.secondary).padding(3)
-                            }
-                            .overlay(alignment: .topTrailing) {
-                                Text("\(Int((m.coreHistory[i].last ?? 0).rounded()))%")
-                                    .font(.caption2.monospacedDigit()).foregroundStyle(.secondary).padding(3)
-                            }
+        VStack(alignment: .leading, spacing: 10 * ui) {
+            HStack(spacing: 12 * ui) {
+                Text("% 使用率 (論理プロセッサごと)").scaledFont(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if hasCoreTypes {
+                    Picker("並べ方", selection: $m.cpuGrouping) {
+                        ForEach(CPUGrouping.allCases) { g in Text(g.title).tag(g) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                }
+                Picker("列数", selection: $m.cpuColumns) {
+                    Text("列数: 自動").tag(0)
+                    Text("2 列").tag(2)
+                    Text("4 列").tag(4)
+                    Text("8 列").tag(8)
+                }
+                .labelsHidden()
+                .fixedSize()
+            }
+            ForEach(coreGroups) { group in
+                VStack(alignment: .leading, spacing: 4 * ui) {
+                    if let title = group.title {
+                        Text("\(title)（\(group.indices.count)）").scaledFont(.headline)
+                    }
+                    LazyVGrid(columns: gridColumns(for: group.indices.count), spacing: 6 * ui) {
+                        ForEach(group.indices, id: \.self) { i in coreTile(i) }
+                    }
                 }
             }
-            bottomAxis
+            HStack { Text("60 秒"); Spacer(); Text("0") }
+                .scaledFont(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    private func coreTile(_ i: Int) -> some View {
+        LineGraph(series: [GraphSeries(values: m.coreHistory[i], color: Palette.cpu)],
+                  maxValue: 100, frameColor: Palette.cpu, gridDivisions: 4)
+            .frame(height: 86 * ui)
+            .overlay(alignment: .topLeading) {
+                Text("CPU \(i)  \(coreKind(i))")
+                    .scaledFont(.caption2).foregroundStyle(.secondary).padding(3 * ui)
+            }
+            .overlay(alignment: .topTrailing) {
+                Text("\(Int((m.coreHistory[i].last ?? 0).rounded()))%")
+                    .scaledFont(.caption2, mono: true).foregroundStyle(.secondary).padding(3 * ui)
+            }
+    }
+
+    /// P コア / E コアの数が分かるか (Apple Silicon)
+    private var hasCoreTypes: Bool {
+        guard let e = m.staticInfo.eCores, e > 0, m.staticInfo.pCores != nil else { return false }
+        return e < m.coreHistory.count
+    }
+
+    private var coreGroups: [CoreGroup] {
+        let n = m.coreHistory.count
+        if m.cpuGrouping == .coreType, hasCoreTypes, let e = m.staticInfo.eCores {
+            return [
+                CoreGroup(id: "p", title: "高性能コア (P)", indices: Array(e..<n)),
+                CoreGroup(id: "e", title: "高効率コア (E)", indices: Array(0..<e)),
+            ]
+        }
+        return [CoreGroup(id: "all", title: nil, indices: Array(0..<n))]
+    }
+
+    /// 列数: 指定があればその数、自動なら分けたときは 1 グループ 1 行 (最大 8 列)、まとめて表示なら幅に合わせる
+    private func gridColumns(for count: Int) -> [GridItem] {
+        let fixed = m.cpuColumns > 0
+            ? m.cpuColumns
+            : (m.cpuGrouping == .coreType && hasCoreTypes ? min(max(count, 1), 8) : 0)
+        if fixed > 0 {
+            return Array(repeating: GridItem(.flexible(), spacing: 6 * ui), count: fixed)
+        }
+        return [GridItem(.adaptive(minimum: 150 * ui), spacing: 6 * ui)]
     }
 
     /// Apple Silicon では先頭の論理プロセッサが E コア
@@ -246,11 +323,11 @@ struct PerformanceView: View {
             axis("メモリ使用量", Fmt.bytes(mem.total))
             LineGraph(series: [GraphSeries(values: m.memHistory, color: Palette.memory)],
                       maxValue: 100, frameColor: Palette.memory)
-                .frame(height: 260)
+                .frame(height: 260 * ui)
             bottomAxis
 
-            Text("メモリの構成").font(.caption).foregroundStyle(.secondary).padding(.top, 6)
-            MemoryBar(mem: mem).frame(height: 36)
+            Text("メモリの構成").scaledFont(.caption).foregroundStyle(.secondary).padding(.top, 6)
+            MemoryBar(mem: mem).frame(height: 36 * ui)
 
             HStack(alignment: .top, spacing: 48) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -282,18 +359,18 @@ struct PerformanceView: View {
             axis("アクティブな時間")
             LineGraph(series: [GraphSeries(values: m.diskActiveHistory, color: Palette.disk)],
                       maxValue: 100, frameColor: Palette.disk)
-                .frame(height: 180)
+                .frame(height: 180 * ui)
             bottomAxis
             axis("ディスク転送速度", Fmt.rate(tMax))
             LineGraph(series: [GraphSeries(values: m.diskReadHistory, color: Palette.disk),
                                GraphSeries(values: m.diskWriteHistory, color: Palette.disk, filled: false, dashed: true)],
                       maxValue: tMax, frameColor: Palette.disk)
-                .frame(height: 120)
+                .frame(height: 120 * ui)
             HStack(spacing: 16) {
                 Label("読み取り", systemImage: "line.diagonal").foregroundStyle(Palette.disk)
                 Label("書き込み (破線)", systemImage: "line.diagonal").foregroundStyle(.secondary)
             }
-            .font(.caption)
+            .scaledFont(.caption)
 
             HStack(alignment: .top, spacing: 48) {
                 VStack(alignment: .leading, spacing: 14) {
@@ -322,13 +399,13 @@ struct PerformanceView: View {
             LineGraph(series: [GraphSeries(values: rx, color: Palette.network),
                                GraphSeries(values: tx, color: Palette.network, filled: false, dashed: true)],
                       maxValue: maxV, frameColor: Palette.network)
-                .frame(height: 300)
+                .frame(height: 300 * ui)
             bottomAxis
             HStack(spacing: 16) {
                 Label("受信", systemImage: "line.diagonal").foregroundStyle(.secondary)
                 Label("送信 (破線)", systemImage: "line.diagonal").foregroundStyle(.secondary)
             }
-            .font(.caption)
+            .scaledFont(.caption)
 
             HStack(alignment: .top, spacing: 48) {
                 HStack(spacing: 32) {
@@ -354,7 +431,7 @@ struct PerformanceView: View {
             axis("使用率")
             LineGraph(series: [GraphSeries(values: m.gpuHistory, color: Palette.gpu)],
                       maxValue: 100, frameColor: Palette.gpu)
-                .frame(height: 300)
+                .frame(height: 300 * ui)
             bottomAxis
             HStack(alignment: .top, spacing: 48) {
                 HStack(spacing: 32) {
@@ -372,6 +449,7 @@ struct PerformanceView: View {
 
 /// メモリ構成バー
 private struct MemoryBar: View {
+    @Environment(\.uiScale) private var ui
     let mem: MemSnapshot
     var body: some View {
         let total = Double(max(mem.total, 1))
