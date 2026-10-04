@@ -8,15 +8,21 @@ import AppKit
 // 値を埋め込む所は %@ にして L("PID %@ は…", "\(pid)") のように渡す
 // (この形のときは文中の % を %% と書く)。
 
+/// 日本語で表示するか。
+/// ja.lproj には翻訳表が無いため、日本語のときは原文 (キー) をそのまま使う
+/// (macOS は表が見つからないと開発言語 = 英語の表を使ってしまうため)
+private let showsJapanese: Bool =
+    Bundle.main.preferredLocalizations.first?.hasPrefix("ja") ?? true
+
 /// 日本語の原文をキーにして、今の言語の文字列を返す
 func L(_ key: String, _ args: CVarArg...) -> String {
-    let s = Bundle.main.localizedString(forKey: key, value: key, table: nil)
+    let s = showsJapanese ? key : Bundle.main.localizedString(forKey: key, value: key, table: nil)
     return args.isEmpty ? s : String(format: s, arguments: args)
 }
 
 /// 同じ日本語でも英語を変えたい所用 (キーと日本語の原文を別にする)
 func LK(_ key: String, _ japanese: String) -> String {
-    Bundle.main.localizedString(forKey: key, value: japanese, table: nil)
+    showsJapanese ? japanese : Bundle.main.localizedString(forKey: key, value: japanese, table: nil)
 }
 
 // MARK: - 表示言語の設定
