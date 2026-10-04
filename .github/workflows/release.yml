@@ -31,8 +31,8 @@ jobs:
 
       - name: zip に固める
         run: |
-          ZIP="TaskManager-${GITHUB_REF_NAME}.zip"
-          ditto -c -k --keepParent TaskManager.app "$ZIP"
+          ZIP="SystemMonitor-${GITHUB_REF_NAME}.zip"
+          ditto -c -k --keepParent SystemMonitor.app "$ZIP"
           shasum -a 256 "$ZIP" > "$ZIP.sha256"
           cat "$ZIP.sha256"
 
@@ -47,12 +47,12 @@ jobs:
             echo ""
             echo "---"
             echo "### インストール"
-            echo "1. **\`TaskManager-${GITHUB_REF_NAME}.dmg\` をダウンロード**して開き、TaskManager を「Applications」にドラッグ（zip 版もあります）"
+            echo "1. **\`SystemMonitor-${GITHUB_REF_NAME}.dmg\` をダウンロード**して開き、システムモニターを「Applications」にドラッグ（zip 版もあります）"
             echo "2. このアプリは Apple の公証 (notarization) を受けていないため、初回は起動がブロックされます。"
             echo "   「システム設定」→「プライバシーとセキュリティ」→「このまま開く」で許可してください。"
             echo ""
             echo "ダウンロードしたファイルが改ざんされていないかは、\`.sha256\` のハッシュ値で確認できます:"
-            echo "\`shasum -a 256 -c TaskManager-${GITHUB_REF_NAME}.dmg.sha256\`"
+            echo "\`shasum -a 256 -c SystemMonitor-${GITHUB_REF_NAME}.dmg.sha256\`"
           } >> notes.md
           cat notes.md
 
@@ -61,10 +61,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            "TaskManager-${GITHUB_REF_NAME}.dmg" \
-            "TaskManager-${GITHUB_REF_NAME}.dmg.sha256" \
-            "TaskManager-${GITHUB_REF_NAME}.zip" \
-            "TaskManager-${GITHUB_REF_NAME}.zip.sha256" \
+            "SystemMonitor-${GITHUB_REF_NAME}.dmg" \
+            "SystemMonitor-${GITHUB_REF_NAME}.dmg.sha256" \
+            "SystemMonitor-${GITHUB_REF_NAME}.zip" \
+            "SystemMonitor-${GITHUB_REF_NAME}.zip.sha256" \
             --title "$GITHUB_REF_NAME" \
             --notes-file notes.md \
             --verify-tag

@@ -1,12 +1,13 @@
 #!/bin/bash
-# TaskManager.app をビルドして同じフォルダに作成します
+# SystemMonitor.app (システムモニター) をビルドして同じフォルダに作成します
 #   使い方:  ./build_app.sh            (作成後、自動で起動)
 #            ./build_app.sh --install  (/Applications に安全にインストールして起動)
 #            ./build_app.sh --no-open  (起動しない / CI 用)
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="TaskManager.app"
+APP="SystemMonitor.app"
+EXE="SystemMonitor"
 OPEN_APP=1
 INSTALL=0
 case "${1:-}" in
@@ -30,21 +31,26 @@ fi
 echo "▶ リリースビルド中... (v$VERSION, build $BUILD, $COMMIT)"
 swift build -c release
 
-BIN="$(swift build -c release --show-bin-path)/TaskManager"
+BIN="$(swift build -c release --show-bin-path)/$EXE"
 
 echo "▶ $APP を作成中..."
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN" "$APP/Contents/MacOS/TaskManager"
+cp "$BIN" "$APP/Contents/MacOS/$EXE"
 # 軽量化: デバッグ用のシンボル情報を取り除いてサイズを小さくする
-strip -S -x "$APP/Contents/MacOS/TaskManager"
+strip -S -x "$APP/Contents/MacOS/$EXE"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 # Info.plist にバージョンを書き込む
 PLIST="$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD" "$PLIST"
-/usr/libexec/PlistBuddy -c "Add :TMGitCommit string $COMMIT" "$PLIST"
+/usr/libexec/PlistBuddy -c "Add :SMGitCommit string $COMMIT" "$PLIST"
+
+# 表示名の翻訳 (日本語: システムモニター / 英語: System Monitor)
+for lproj in Resources/*.lproj; do
+  [ -d "$lproj" ] && cp -R "$lproj" "$APP/Contents/Resources/"
+done
 
 # アイコン
 if [ -f Resources/AppIcon.icns ]; then
@@ -64,19 +70,28 @@ if [ "$INSTALL" = 1 ]; then
   DEST="/Applications/$APP"
   echo "▶ $DEST にインストール中..."
   # 起動中なら終了させる (起動していないときに quit を送ると逆に起動してしまうので確認してから)
-  if pgrep -f "$DEST/Contents/MacOS/TaskManager" >/dev/null 2>&1; then
-    osascript -e 'tell application id "local.pim.taskmanager" to quit' >/dev/null 2>&1 || true
+  if pgrep -f "$DEST/Contents/MacOS/$EXE" >/dev/null 2>&1; then
+    osascript -e 'tell application id "local.pim.systemmonitor" to quit' >/dev/null 2>&1 || true
     sleep 1
-    pkill -f "$DEST/Contents/MacOS/TaskManager" 2>/dev/null || true
+    pkill -f "$DEST/Contents/MacOS/$EXE" 2>/dev/null || true
   fi
   # 重要: 既存のアプリに上書きコピー (cp -R) すると、署名のキャッシュと中身が食い違い
   #       "Code Signature Invalid" で起動直後に強制終了される。必ず削除してから新規にコピーする。
   rm -rf "$DEST"
   ditto "$APP" "$DEST"
+
+  # 旧名 (v1.x) の TaskManager.app が残っていれば終了して削除する
+  OLD="/Applications/TaskManager.app"
+  if [ -d "$OLD" ]; then
+    osascript -e 'tell application id "local.pim.taskmanager" to quit' >/dev/null 2>&1 || true
+    pkill -f "$OLD/Contents/MacOS/TaskManager" 2>/dev/null || true
+    rm -rf "$OLD"
+    echo "▶ 旧名の TaskManager.app を削除しました（設定・履歴は初回起動時に引き継がれます）"
+  fi
   codesign --verify --strict "$DEST"
   echo "✅ インストールしました: $DEST"
   # バックグラウンド記録 (LaunchAgent) を使っていれば新しいアプリで再起動する
-  AGENT="local.pim.taskmanager.recorder"
+  AGENT="local.pim.systemmonitor.recorder"
   if [ -f "$HOME/Library/LaunchAgents/$AGENT.plist" ]; then
     launchctl kickstart -k "gui/$(id -u)/$AGENT" >/dev/null 2>&1 \
       || launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$AGENT.plist" >/dev/null 2>&1 || true

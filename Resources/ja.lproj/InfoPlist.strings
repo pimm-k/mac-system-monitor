@@ -1,0 +1,3 @@
+/* アプリの表示名 */
+CFBundleName = "システムモニター";
+CFBundleDisplayName = "システムモニター";

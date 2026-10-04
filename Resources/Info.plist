@@ -5,13 +5,13 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>ja</string>
     <key>CFBundleExecutable</key>
-    <string>TaskManager</string>
+    <string>SystemMonitor</string>
     <key>CFBundleIdentifier</key>
-    <string>local.pim.taskmanager</string>
+    <string>local.pim.systemmonitor</string>
     <key>CFBundleName</key>
-    <string>タスク マネージャー</string>
+    <string>システムモニター</string>
     <key>CFBundleDisplayName</key>
-    <string>タスク マネージャー</string>
+    <string>システムモニター</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundlePackageType</key>
@@ -20,6 +20,8 @@
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>LSHasLocalizedDisplayName</key>
+    <true/>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>LSApplicationCategoryType</key>

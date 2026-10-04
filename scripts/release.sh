@@ -7,7 +7,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-REPO_URL="https://github.com/pimm-k/mac-task-manager"
+REPO_URL="https://github.com/pimm-k/mac-system-monitor"
 NEW="${1:-}"
 PUSH=0
 [ "${2:-}" = "--push" ] && PUSH=1

@@ -55,7 +55,7 @@ enum AppVersion {
     }
     static var short: String? { info("CFBundleShortVersionString") }
     static var build: String? { info("CFBundleVersion") }
-    static var commit: String? { info("TMGitCommit") }
+    static var commit: String? { info("SMGitCommit") }
 
     /// 例: "v1.0.0 (12)"。swift run で起動したときは "開発版"
     static var display: String {
@@ -151,7 +151,7 @@ enum Shell {
     }
 }
 
-// MARK: - 色 (Windows タスクマネージャー風)
+// MARK: - 色 (Windows のタスクマネージャー風)
 
 enum Palette {
     static let cpu = Color(red: 0.07, green: 0.49, blue: 0.86)

@@ -1,6 +1,7 @@
 # ビルド成果物
 .build/
 .swiftpm/
+SystemMonitor.app/
 TaskManager.app/
 *.dmg
 *.dmg.sha256

@@ -2,16 +2,18 @@
   <img src="docs/icon.png" width="160" alt="アイコン">
 </p>
 
-<h1 align="center">mac-task-manager</h1>
+<h1 align="center">システムモニター for Mac</h1>
+
+<p align="center"><b>System Monitor</b> — mac-system-monitor</p>
 
 <p align="center">
-  Windows の「タスク マネージャー」風のシステムモニターを macOS 向けに SwiftUI で作ったアプリです。<br>
-  A Windows Task Manager–style system monitor for macOS, built with SwiftUI.
+  プロセス・パフォーマンス・履歴を確認できる macOS 向けのシステムモニターです（Windows のタスクマネージャーを参考に SwiftUI で開発）。<br>
+  A system monitor for macOS inspired by the Windows Task Manager, built with SwiftUI.
 </p>
 
 <p align="center">
-  <a href="https://github.com/pimm-k/mac-task-manager/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/pimm-k/mac-task-manager"></a>
-  <a href="https://github.com/pimm-k/mac-task-manager/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/pimm-k/mac-task-manager/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/pimm-k/mac-system-monitor/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/pimm-k/mac-system-monitor"></a>
+  <a href="https://github.com/pimm-k/mac-system-monitor/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/pimm-k/mac-system-monitor/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-blue">
   <img alt="Swift" src="https://img.shields.io/badge/Swift-5.9%2B-orange">
   <img alt="License" src="https://img.shields.io/badge/license-Use%20Only%20%2F%20No%20Derivatives-lightgrey">
@@ -42,17 +44,27 @@
 
 ## ダウンロード・インストール
 
-1. [Releases](https://github.com/pimm-k/mac-task-manager/releases/latest) から **`TaskManager-vX.Y.Z.dmg`** をダウンロード
-2. ダウンロードした .dmg を開き、**TaskManager を「Applications」にドラッグ**
+1. [Releases](https://github.com/pimm-k/mac-system-monitor/releases/latest) から **`SystemMonitor-vX.Y.Z.dmg`** をダウンロード
+2. ダウンロードした .dmg を開き、**システムモニターを「Applications」にドラッグ**
 3. 初回だけ、起動がブロックされたら「システム設定」→「プライバシーとセキュリティ」→「**このまま開く**」で許可
 
-> Apple の公証（notarization）を受けていないため、初回のみ 3 の操作が必要です。改ざんされていないかは `.sha256` で確認できます：`shasum -a 256 -c TaskManager-vX.Y.Z.dmg.sha256`
+> Apple の公証（notarization）を受けていないため、初回のみ 3 の操作が必要です。改ざんされていないかは `.sha256` で確認できます：`shasum -a 256 -c SystemMonitor-vX.Y.Z.dmg.sha256`
+
+## 旧名「タスク マネージャー」(v1.x) からの移行
+
+v2.0.0 で名前を「システムモニター」（`SystemMonitor.app`）に変更しました。新しいアプリを初めて起動すると、次のものが自動で引き継がれます。
+
+- 設定（前回開いていたタブ・拡大率・CPU の表示など）
+- 履歴データ（`~/Library/Application Support/TaskManager` → `SystemMonitor`）
+- バックグラウンド記録（使っていた場合は新しい名前で再登録）
+
+引き継ぎ後、古い `TaskManager.app` は削除して構いません（`./build_app.sh --install` では自動で削除されます）。
 
 ## ビルドと実行
 
 ```bash
-git clone https://github.com/pimm-k/mac-task-manager.git
-cd mac-task-manager
+git clone https://github.com/pimm-k/mac-system-monitor.git
+cd mac-system-monitor
 
 # すぐに動かす
 swift run
@@ -61,19 +73,22 @@ swift run
 ./build_app.sh --install
 ```
 
-> ⚠️ `cp -R` で既存の `/Applications/TaskManager.app` に上書きすると、署名が食い違って起動直後に強制終了します。必ず `--install` を使うか、古いアプリを削除してからコピーしてください。
+> ⚠️ `cp -R` で既存の `/Applications/SystemMonitor.app` に上書きすると、署名が食い違って起動直後に強制終了します。必ず `--install` を使うか、古いアプリを削除してからコピーしてください。
 
 > 自分の Mac でビルドしたアプリは、そのまま警告なしで起動できます。
 
 ## プロジェクト構成
 
 ```
-Sources/TaskManager/
-├── TaskManagerApp.swift      … エントリーポイント
+Sources/SystemMonitor/
+├── SystemMonitorApp.swift    … エントリーポイント
 ├── Data/
 │   ├── Monitor.swift         … 定期更新・履歴・終了などの操作
 │   ├── ProcessSampler.swift  … libproc でプロセス情報を取得
 │   ├── SystemSampler.swift   … CPU / メモリ / ディスク(IOKit) / ネットワーク / GPU
+│   ├── HistoryStore.swift    … 履歴データベース (SQLite)
+│   ├── HistoryRecorder.swift … 履歴の記録・バックグラウンド記録 (LaunchAgent)
+│   ├── LegacyMigration.swift … 旧名 TaskManager (v1.x) からの引き継ぎ
 │   └── LaunchItems.swift     … LaunchAgents / Daemons の読み込みと切り替え
 ├── Views/                    … 各タブの画面
 └── Util/Utilities.swift      … 書式・sysctl・シェル実行
@@ -89,9 +104,9 @@ Resources/
 
 ## 履歴の記録について
 
-- 履歴タブの「バックグラウンドで記録する」を押すと、LaunchAgent（`local.pim.taskmanager.recorder`）が登録され、ログイン中は常に 5 秒ごとに記録します。macOS から「バックグラウンド項目が追加されました」という通知が出ます。
+- 履歴タブの「バックグラウンドで記録する」を押すと、LaunchAgent（`local.pim.systemmonitor.recorder`）が登録され、ログイン中は常に 5 秒ごとに記録します。macOS から「バックグラウンド項目が追加されました」という通知が出ます。
 - 無効のときは、アプリを開いている間だけ記録します。
-- 記録先：`~/Library/Application Support/TaskManager/history.sqlite`（本人のみ読み書きできる権限）。**外部には一切送信しません。**
+- 記録先：`~/Library/Application Support/SystemMonitor/history.sqlite`（本人のみ読み書きできる権限）。**外部には一切送信しません。**
 - 保存期間：5 秒ごとのデータは 24 時間、1 分ごとのまとめ・アプリ別使用量・ログは 30 日。古いものは自動で削除され、容量は数十 MB 程度です。
 - 停止・削除：履歴タブの「バックグラウンド記録を停止」と「…」→「すべての履歴を削除」から行えます。
 
@@ -120,7 +135,7 @@ Resources/
 
 - 本プロジェクトは個人制作のアプリであり、Microsoft Corporation とは一切関係がなく、同社による承認・提携・後援を受けたものではありません。
 - 本アプリは Windows の「タスク マネージャー」の機能や使い勝手を**参考にして独自に開発**したものです。Microsoft のソースコード、アイコン、画像などの素材は一切使用していません。
-- 「タスク マネージャー」という呼び名は、Windows の同名機能を参考にした説明的な名称です。
+- 本アプリは v1.x まで「タスク マネージャー」（TaskManager）という名前でしたが、v2.0.0 で「システムモニター」（System Monitor）に改名しました。
 - Microsoft、Windows は、米国 Microsoft Corporation の米国およびその他の国における登録商標または商標です。
 - macOS、Mac は、米国およびその他の国で登録された Apple Inc. の商標です。
 - その他、記載されている会社名・製品名は、各社の商標または登録商標です。
