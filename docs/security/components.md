@@ -25,6 +25,7 @@
 | Swift / Xcode Command Line Tools | ビルド |
 | `codesign`（アドホック署名 + Hardened Runtime） | 署名 |
 | `ditto` / `PlistBuddy` | インストール・Info.plist 編集 |
+| `hdiutil` | インストーラー (.dmg) の作成 |
 
 ## 3. GitHub Actions
 
