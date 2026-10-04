@@ -40,10 +40,13 @@
 - macOS 14 (Sonoma) 以降
 - Xcode または Command Line Tools（`xcode-select --install`）
 
-## ダウンロード
+## ダウンロード・インストール
 
-[Releases](https://github.com/pimm-k/mac-task-manager/releases/latest) からビルド済みの `TaskManager-vX.Y.Z.zip` をダウンロードできます。
-Apple の公証を受けていないため、初回は「システム設定」→「プライバシーとセキュリティ」→「このまま開く」で起動を許可してください。
+1. [Releases](https://github.com/pimm-k/mac-task-manager/releases/latest) から **`TaskManager-vX.Y.Z.dmg`** をダウンロード
+2. ダウンロードした .dmg を開き、**TaskManager を「Applications」にドラッグ**
+3. 初回だけ、起動がブロックされたら「システム設定」→「プライバシーとセキュリティ」→「**このまま開く**」で許可
+
+> Apple の公証（notarization）を受けていないため、初回のみ 3 の操作が必要です。改ざんされていないかは `.sha256` で確認できます：`shasum -a 256 -c TaskManager-vX.Y.Z.dmg.sha256`
 
 ## ビルドと実行
 
@@ -75,6 +78,7 @@ Sources/TaskManager/
 ├── Views/                    … 各タブの画面
 └── Util/Utilities.swift      … 書式・sysctl・シェル実行
 scripts/release.sh            … リリース (バージョン更新・CHANGELOG・タグ作成)
+scripts/make_dmg.sh           … インストーラー (.dmg) の作成
 .github/workflows/            … CI (自動ビルド) と Release (自動公開)
 VERSION                       … バージョン番号 (唯一の正)
 Resources/

@@ -2,6 +2,8 @@
 .build/
 .swiftpm/
 TaskManager.app/
+*.dmg
+*.dmg.sha256
 *.xcodeproj/
 DerivedData/
 

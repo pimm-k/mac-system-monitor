@@ -10,6 +10,10 @@
 
 ## [Unreleased]
 
+### 追加
+- **インストーラー (.dmg)**：Releases に、開いて Applications にドラッグするだけでインストールできる `TaskManager-vX.Y.Z.dmg` を追加（中に初回起動・アップデート・アンインストールの手順書入り）
+- `scripts/make_dmg.sh`：手元でも .dmg を作れるように
+
 ## [1.2.0] - 2026-10-04
 
 ### 追加
