@@ -80,7 +80,6 @@ final class Monitor: ObservableObject {
         static let cpuGraphMode = "cpuGraphMode"
         static let zoom = "uiZoom"
         static let autoScale = "uiAutoScale"
-        static let cpuGrouping = "cpuGrouping"
         static let cpuColumns = "cpuColumns"
     }
 
@@ -103,10 +102,6 @@ final class Monitor: ObservableObject {
     /// ウィンドウの大きさに合わせて自動で拡大するか
     @Published var autoScale: Bool = UserDefaults.standard.object(forKey: Keys.autoScale) as? Bool ?? true {
         didSet { UserDefaults.standard.set(autoScale, forKey: Keys.autoScale) }
-    }
-    /// 論理プロセッサの並べ方 (まとめて / 高性能・高効率で分ける)
-    @Published var cpuGrouping: CPUGrouping = CPUGrouping(rawValue: UserDefaults.standard.string(forKey: Keys.cpuGrouping) ?? "") ?? .coreType {
-        didSet { UserDefaults.standard.set(cpuGrouping.rawValue, forKey: Keys.cpuGrouping) }
     }
     /// 論理プロセッサの列数 (0 = 自動)
     @Published var cpuColumns: Int = UserDefaults.standard.integer(forKey: Keys.cpuColumns) {
