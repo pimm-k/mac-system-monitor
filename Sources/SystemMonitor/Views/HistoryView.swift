@@ -28,13 +28,14 @@ enum HistoryRange: String, CaseIterable, Identifiable {
 }
 
 enum HistorySection: String, CaseIterable, Identifiable {
-    case graphs, apps, spikes, events
+    case graphs, apps, spikes, network, events
     var id: String { rawValue }
     var title: String {
         switch self {
         case .graphs: return "推移グラフ"
         case .apps: return "アプリの履歴"
         case .spikes: return "高負荷の記録"
+        case .network: return "通信の警告"
         case .events: return "起動・終了ログ"
         }
     }
@@ -61,6 +62,7 @@ final class HistoryModel: ObservableObject {
     @Published private(set) var apps: [AppHistoryRow] = []
     @Published private(set) var events: [ProcessEvent] = []
     @Published private(set) var spikes: [SpikeRecord] = []
+    @Published private(set) var netAlerts: [NetAlertRecord] = []
     @Published private(set) var stats = HistoryStats()
     @Published private(set) var agentInstalled = RecorderAgent.isInstalled
     @Published private(set) var agentRunning = false
@@ -73,6 +75,7 @@ final class HistoryModel: ObservableObject {
         var apps: [AppHistoryRow] = []
         var events: [ProcessEvent] = []
         var spikes: [SpikeRecord] = []
+        var netAlerts: [NetAlertRecord] = []
         var stats = HistoryStats()
         var agentRunning = false
     }
@@ -89,6 +92,7 @@ final class HistoryModel: ObservableObject {
             case .graphs: s.points = store.series(since: since, until: now)
             case .apps: s.apps = store.appHistory(since: since)
             case .spikes: s.spikes = store.spikes(since: since)
+            case .network: s.netAlerts = store.netAlerts(since: since)
             case .events: s.events = store.events(since: since)
             }
             s.stats = store.stats()
@@ -101,6 +105,7 @@ final class HistoryModel: ObservableObject {
         apps = snap.apps
         events = snap.events
         spikes = snap.spikes
+        netAlerts = snap.netAlerts
         stats = snap.stats
         agentInstalled = installed
         agentRunning = snap.agentRunning
@@ -144,6 +149,9 @@ struct HistoryView: View {
     @StateObject private var appSortBox = Box<[KeyPathComparator<AppHistoryRow>]>([KeyPathComparator(\.cpuSec, order: .reverse)])
     @StateObject private var eventSortBox = Box<[KeyPathComparator<ProcessEvent>]>([KeyPathComparator(\.ts, order: .reverse)])
     @StateObject private var confirmDeleteBox = Box<Bool>(false)
+    @StateObject private var netEnabledBox = Box<Bool>(NetAlertSettings.enabled)
+    @StateObject private var netUploadBox = Box<Bool>(NetAlertSettings.upload)
+    @StateObject private var ignoredBox = Box<Set<String>>(NetAlertSettings.ignored)
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -173,7 +181,7 @@ struct HistoryView: View {
         .confirmationDialog("すべての履歴を削除しますか？", isPresented: $confirmDeleteBox.value) {
             Button("削除", role: .destructive) { Task { await model.deleteAll() } }
         } message: {
-            Text("記録したグラフ・アプリの履歴・ログはすべて消え、元に戻せません。")
+            Text("記録したグラフ・アプリの履歴・ログ・通信の警告はすべて消え、元に戻せません。")
         }
     }
 
@@ -187,7 +195,7 @@ struct HistoryView: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .frame(maxWidth: 480 * ui)
+                .frame(maxWidth: 600 * ui)
                 Spacer()
                 Picker("期間", selection: $model.range) {
                     ForEach(HistoryRange.allCases) { r in Text(r.title).tag(r) }
@@ -256,6 +264,7 @@ struct HistoryView: View {
         case .graphs: graphs
         case .apps: appsTable
         case .spikes: spikesList
+        case .network: networkList
         case .events: eventsTable
         }
     }
@@ -383,6 +392,131 @@ struct HistoryView: View {
                 }
             }
         }
+    }
+
+    // MARK: 通信の警告
+
+    private var filteredNetAlerts: [NetAlertRecord] {
+        let q = search.lowercased()
+        guard !q.isEmpty else { return model.netAlerts }
+        return model.netAlerts.filter {
+            $0.name.lowercased().contains(q) || String($0.pid) == q
+                || $0.path.lowercased().contains(q) || $0.remote.lowercased().contains(q)
+        }
+    }
+
+    private var netSettings: some View {
+        HStack(spacing: 16) {
+            Toggle("怪しい通信を通知する", isOn: Binding(
+                get: { netEnabledBox.value },
+                set: { v in
+                    netEnabledBox.value = v
+                    NetAlertSettings.enabled = v
+                    if v { Notifier.requestAuthorization() }
+                }))
+            Toggle("大量の送信も通知する", isOn: Binding(
+                get: { netUploadBox.value },
+                set: { v in netUploadBox.value = v; NetAlertSettings.upload = v }))
+                .disabled(!netEnabledBox.value)
+            Spacer()
+            if !ignoredBox.value.isEmpty {
+                Button("通知しない設定を解除 (\(ignoredBox.value.count) 件)") {
+                    ignoredBox.value = []
+                    NetAlertSettings.ignored = []
+                }
+            }
+            Button("通知の設定…") {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+        .toggleStyle(.checkbox)
+        .padding(.horizontal, 16).padding(.vertical, 8)
+    }
+
+    private var netFooter: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(NetRule.allCases, id: \.self) { r in
+                Text("・\(r.title)：\(r.explanation)")
+            }
+            Text("あなたのユーザーで動いているプロセスを 15 秒ごとに確認します（root のプロセスは対象外）。目安の判定のため、正常なアプリが通知されることもあります。同じ内容は 6 時間に 1 回まで通知します。")
+        }
+        .scaledFont(.caption).foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder private var networkList: some View {
+        VStack(spacing: 0) {
+            netSettings
+            Divider()
+            if filteredNetAlerts.isEmpty {
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "checkmark.shield").scaledFont(.largeTitle).foregroundStyle(.green)
+                    Text(model.loaded ? (netEnabledBox.value ? "この期間に怪しい通信は見つかっていません。" : "怪しい通信の通知はオフです。")
+                                      : "読み込み中…")
+                        .foregroundStyle(.secondary)
+                    netFooter.frame(maxWidth: 640 * ui)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+            } else {
+                List {
+                    Section {
+                        ForEach(filteredNetAlerts) { a in netAlertRow(a) }
+                    } footer: {
+                        netFooter
+                    }
+                }
+            }
+        }
+    }
+
+    private func netAlertRow(_ a: NetAlertRecord) -> some View {
+        let rule = a.ruleValue
+        let ignoreKey = NetAlertSettings.ignoreKey(rule: a.rule, path: a.path)
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: rule?.icon ?? "exclamationmark.triangle")
+                .scaledFont(.title2)
+                .foregroundStyle(.orange)
+                .frame(width: 28 * ui)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(rule?.title ?? a.rule).scaledFont(.headline)
+                    Text(Self.timeFormatter.string(from: a.date)).foregroundStyle(.secondary)
+                }
+                if !a.path.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(nsImage: IconCache.shared.icon(path: a.path, bundlePath: nil))
+                            .resizable().frame(width: 16 * ui, height: 16 * ui)
+                        Text("\(a.name)  (PID \(a.pid))")
+                        if !a.remote.isEmpty {
+                            Text("→ \(a.remote)").scaledFont(.callout, mono: true)
+                        }
+                    }
+                    Text(a.path).scaledFont(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                }
+                Text(a.detail).scaledFont(.callout).foregroundStyle(.secondary).textSelection(.enabled)
+                if !a.path.isEmpty {
+                    HStack(spacing: 12) {
+                        Button("Finder で表示") { m.revealInFinder(path: a.path) }
+                        if ignoredBox.value.contains(ignoreKey) {
+                            Text("今後は通知しません").foregroundStyle(.secondary)
+                        } else {
+                            Button("このプログラムのこの種類は今後通知しない") {
+                                ignoredBox.value.insert(ignoreKey)
+                                NetAlertSettings.ignored = ignoredBox.value
+                            }
+                        }
+                    }
+                    .buttonStyle(.link)
+                    .scaledFont(.caption)
+                }
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     // MARK: 起動・終了ログ

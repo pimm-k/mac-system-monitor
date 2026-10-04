@@ -16,6 +16,9 @@ struct ContentView: View {
         }
         .task { await m.run() }
         .task { updater.checkOnLaunch() }
+        .onReceive(NotificationCenter.default.publisher(for: Notifier.openNetAlerts)) { _ in
+            m.openNetworkAlerts()
+        }
         .sheet(isPresented: $updater.showSheet) {
             UpdateSheet().environmentObject(updater)
         }
