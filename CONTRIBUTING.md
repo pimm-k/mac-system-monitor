@@ -33,10 +33,17 @@ main ──●────────●──────────●──
 git switch main && git pull
 git switch -c feature/xxx        # ブランチを作る
 # ... 作業・コミット ...
-git push -u origin feature/xxx   # GitHub で Pull Request を作成
-# CI（自動ビルド）が通ったらマージ
-git switch main && git pull && git branch -d feature/xxx
+git pr                           # push → PR 作成 → チェック完了まで待つ
+git pr -m                        # 同上 + 成功したらマージして main に戻る
 ```
+
+| コマンド | やること |
+|---|---|
+| `git pr` | push、PR が無ければ作成、チェック完了まで待つ |
+| `git pr -m` | 上に加えて全チェック成功ならスカッシュマージ → `main` を pull |
+| `git pr -w` | チェック待ちだけ（`gh pr checks --watch` と同じ） |
+
+`git pr` は `./scripts/setup-hooks.sh` を実行すると使えます（直接 `./scripts/pr.sh` でも可）。
 
 ## コミットメッセージ（Conventional Commits）
 
