@@ -56,30 +56,24 @@ struct ContentView: View {
         .searchable(text: $searchBox.value, placement: .toolbar, prompt: L("名前・PID・ユーザーで検索"))
         .toolbar {
             ToolbarItem(placement: .automatic) {
-                Menu {
-                    Picker(L("リアルタイム更新の速度"), selection: $m.speed) {
-                        ForEach(UpdateSpeed.allCases) { s in Text(s.title).tag(s) }
-                    }
-                    Divider()
-                    Toggle(L("ウィンドウの大きさに合わせて拡大"), isOn: $m.autoScale)
-                    Button(L("拡大")) { m.zoomIn() }
-                    Button(L("縮小")) { m.zoomOut() }
-                    Button(L("実際のサイズ（%@%% → 100%%）", "\(Int((m.zoom * 100).rounded()))")) { m.zoomReset() }
-                    Divider()
-                    Toggle(L("常に手前に表示"), isOn: $m.alwaysOnTop)
-                    Picker("言語 / Language", selection: Binding(
-                        get: { AppLanguage.current },
-                        set: { AppLanguage.set($0) })) {
-                        ForEach(AppLanguage.allCases) { l in Text(l.title).tag(l) }
-                    }
-                    Divider()
-                    Button(L("アップデートを確認…")) { Task { await updater.check(userInitiated: true) } }
-                    Toggle(L("起動時にアップデートを確認"), isOn: $updater.autoCheck)
-                } label: {
-                    // アイコン (…) だけだと分かりにくいので文字で表示する
-                    Text(L("オプション"))
-                }
-                .help(L("更新速度・表示サイズ・言語・アップデートなどの設定"))
+                // メニューを開いている間に毎秒の更新で作り直されないよう、
+                // 設定値が変わったときだけ再描画する別ビューにしている
+                OptionsMenu(
+                    speed: m.speed,
+                    autoScale: m.autoScale,
+                    zoomPercent: Int((m.zoom * 100).rounded()),
+                    alwaysOnTop: m.alwaysOnTop,
+                    autoCheck: updater.autoCheck,
+                    actions: OptionsMenu.Actions(
+                        setSpeed: { m.speed = $0 },
+                        setAutoScale: { m.autoScale = $0 },
+                        zoomIn: { m.zoomIn() },
+                        zoomOut: { m.zoomOut() },
+                        zoomReset: { m.zoomReset() },
+                        setAlwaysOnTop: { m.alwaysOnTop = $0 },
+                        checkUpdate: { Task { await updater.check(userInitiated: true) } },
+                        setAutoCheck: { updater.autoCheck = $0 }))
+                .equatable()
             }
         }
         .alert(Text(m.alert?.title ?? ""),
@@ -163,5 +157,66 @@ private struct SidebarButton: View {
         }
         .buttonStyle(.plain)
         .fontWeight(selected ? .semibold : .regular)
+    }
+}
+
+/// ツールバーの「オプション」メニュー。
+/// 選択肢はサブメニューにせずメニュー内に直接並べ、カーソル移動で閉じにくくしている。
+@MainActor
+private struct OptionsMenu: View, Equatable {
+    struct Actions {
+        let setSpeed: (UpdateSpeed) -> Void
+        let setAutoScale: (Bool) -> Void
+        let zoomIn: () -> Void
+        let zoomOut: () -> Void
+        let zoomReset: () -> Void
+        let setAlwaysOnTop: (Bool) -> Void
+        let checkUpdate: () -> Void
+        let setAutoCheck: (Bool) -> Void
+    }
+
+    let speed: UpdateSpeed
+    let autoScale: Bool
+    let zoomPercent: Int
+    let alwaysOnTop: Bool
+    let autoCheck: Bool
+    let actions: Actions
+
+    nonisolated static func == (a: OptionsMenu, b: OptionsMenu) -> Bool {
+        a.speed == b.speed && a.autoScale == b.autoScale && a.zoomPercent == b.zoomPercent
+            && a.alwaysOnTop == b.alwaysOnTop && a.autoCheck == b.autoCheck
+    }
+
+    var body: some View {
+        Menu {
+            Picker(L("リアルタイム更新の速度"), selection: Binding(get: { speed }, set: actions.setSpeed)) {
+                ForEach(UpdateSpeed.allCases) { s in Text(s.title).tag(s) }
+            }
+            .pickerStyle(.inline)
+
+            Section(L("表示サイズ")) {
+                Toggle(L("ウィンドウの大きさに合わせて拡大"), isOn: Binding(get: { autoScale }, set: actions.setAutoScale))
+                Button(L("拡大")) { actions.zoomIn() }
+                Button(L("縮小")) { actions.zoomOut() }
+                Button(L("実際のサイズ（%@%% → 100%%）", "\(zoomPercent)")) { actions.zoomReset() }
+                Toggle(L("常に手前に表示"), isOn: Binding(get: { alwaysOnTop }, set: actions.setAlwaysOnTop))
+            }
+
+            Picker("言語 / Language", selection: Binding(
+                get: { AppLanguage.current },
+                set: { AppLanguage.set($0) })) {
+                ForEach(AppLanguage.allCases) { l in Text(l.title).tag(l) }
+            }
+            .pickerStyle(.inline)
+
+            Section(L("アップデート")) {
+                Button(L("アップデートを確認…")) { actions.checkUpdate() }
+                Toggle(L("起動時にアップデートを確認"), isOn: Binding(get: { autoCheck }, set: actions.setAutoCheck))
+            }
+        } label: {
+            // アイコン (…) だけだと分かりにくいので文字で表示する
+            Text(L("オプション"))
+        }
+        .help(L("更新速度・表示サイズ・言語・アップデートなどの設定"))
     }
 }
