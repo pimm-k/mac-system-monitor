@@ -30,15 +30,20 @@ enum Entry {
 struct SystemMonitorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var monitor = Monitor()
+    @StateObject private var updater = Updater()
 
     var body: some Scene {
         Window("システムモニター", id: "main") {
             ContentView()
                 .environmentObject(monitor)
+                .environmentObject(updater)
                 .frame(minWidth: 960, minHeight: 600)
         }
         .defaultSize(width: 1180, height: 760)
         .commands {
+            CommandGroup(after: .appInfo) {
+                Button("アップデートを確認…") { Task { await updater.check(userInitiated: true) } }
+            }
             CommandGroup(after: .toolbar) {
                 Button("拡大") { monitor.zoomIn() }
                     .keyboardShortcut("+", modifiers: .command)

@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 struct ContentView: View {
     @EnvironmentObject private var m: Monitor
+    @EnvironmentObject private var updater: Updater
     @StateObject private var searchBox = Box<String>("")
     private var search: String {
         get { searchBox.value }
@@ -14,6 +15,10 @@ struct ContentView: View {
             mainView(scale: m.uiScale(forWidth: geo.size.width))
         }
         .task { await m.run() }
+        .task { updater.checkOnLaunch() }
+        .sheet(isPresented: $updater.showSheet) {
+            UpdateSheet().environmentObject(updater)
+        }
     }
 
     private func mainView(scale: CGFloat) -> some View {
@@ -59,6 +64,9 @@ struct ContentView: View {
                     Button("実際のサイズ（\(Int((m.zoom * 100).rounded()))% → 100%）") { m.zoomReset() }
                     Divider()
                     Toggle("常に手前に表示", isOn: $m.alwaysOnTop)
+                    Divider()
+                    Button("アップデートを確認…") { Task { await updater.check(userInitiated: true) } }
+                    Toggle("起動時にアップデートを確認", isOn: $updater.autoCheck)
                 } label: {
                     Label("オプション", systemImage: "ellipsis.circle")
                 }
@@ -90,6 +98,7 @@ struct ContentView: View {
 private struct SidebarFooter: View {
     @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
+    @EnvironmentObject private var updater: Updater
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Divider()
@@ -102,6 +111,10 @@ private struct SidebarFooter: View {
                     .foregroundStyle(.tertiary)
                     .help("コミット: \(AppVersion.commit ?? "—")")
                     .padding(.top, 2)
+                if case .available(let r) = updater.state {
+                    Button("⬆︎ v\(r.version) にアップデート") { updater.showSheet = true }
+                        .buttonStyle(.link)
+                }
             }
             .scaledFont(.caption)
             .foregroundStyle(.secondary)
