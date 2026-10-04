@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-04
+
 ### 追加
 - **インストーラー (.dmg)**：Releases に、開いて Applications にドラッグするだけでインストールできる `TaskManager-vX.Y.Z.dmg` を追加（中に初回起動・アップデート・アンインストールの手順書入り）
 - `scripts/make_dmg.sh`：手元でも .dmg を作れるように
@@ -67,7 +69,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/pimm-k/mac-task-manager/releases/tag/v1.0.0
