@@ -154,7 +154,7 @@ final class HistoryRecorder: @unchecked Sendable {
         }
         if s.mem.percent >= Self.memSpikeThreshold, now - (lastSpike["mem"] ?? 0) >= Self.spikeCooldown {
             let top = list.sorted { $0.memory > $1.memory }.prefix(5).map {
-                "\($0.name) (PID \($0.pid))  メモリ \(Fmt.bytes($0.memory))"
+                L("%@ (PID %@)  メモリ %@", "\($0.name)", "\($0.pid)", "\(Fmt.bytes($0.memory))")
             }
             store.insertSpike(ts: now, kind: "mem", value: s.mem.percent, top: top)
             lastSpike["mem"] = now
@@ -234,7 +234,7 @@ enum RecorderAgent {
 
     /// インストールして開始。失敗したらエラーメッセージを返す
     static func install() -> String? {
-        guard let exe = Bundle.main.executablePath else { return "実行ファイルの場所を取得できませんでした。" }
+        guard let exe = Bundle.main.executablePath else { return L("実行ファイルの場所を取得できませんでした。") }
         HistoryPaths.ensureDirectory()
         let log = HistoryPaths.directory.appendingPathComponent("recorder.log").path
         let plist: [String: Any] = [
@@ -254,12 +254,12 @@ enum RecorderAgent {
             let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
             try data.write(to: plistURL, options: .atomic)
         } catch {
-            return "設定ファイルを作成できませんでした: \(error.localizedDescription)"
+            return L("設定ファイルを作成できませんでした: %@", "\(error.localizedDescription)")
         }
         Shell.run("/bin/launchctl", ["bootout", "\(domain)/\(label)"])
         let r = Shell.run("/bin/launchctl", ["bootstrap", domain, plistURL.path])
         if r.status != 0 {
-            return "バックグラウンド記録を開始できませんでした: \(r.err.trimmingCharacters(in: .whitespacesAndNewlines))"
+            return L("バックグラウンド記録を開始できませんでした: %@", "\(r.err.trimmingCharacters(in: .whitespacesAndNewlines))")
         }
         return nil
     }
@@ -269,7 +269,7 @@ enum RecorderAgent {
         Shell.run("/bin/launchctl", ["bootout", "\(domain)/\(label)"])
         if isInstalled {
             do { try FileManager.default.removeItem(at: plistURL) } catch {
-                return "設定ファイルを削除できませんでした: \(error.localizedDescription)"
+                return L("設定ファイルを削除できませんでした: %@", "\(error.localizedDescription)")
             }
         }
         return nil

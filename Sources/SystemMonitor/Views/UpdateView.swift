@@ -14,13 +14,13 @@ struct UpdateSheet: View {
                     .resizable().frame(width: 48, height: 48)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.headline)
-                    Text("現在のバージョン: v\(u.current)")
+                    Text(L("現在のバージョン: v%@", "\(u.current)"))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
             content
             HStack {
-                Toggle("起動時に確認する", isOn: $u.autoCheck)
+                Toggle(L("起動時に確認する"), isOn: $u.autoCheck)
                     .toggleStyle(.checkbox)
                     .font(.caption)
                 Spacer()
@@ -33,12 +33,12 @@ struct UpdateSheet: View {
 
     private var title: String {
         switch u.state {
-        case .idle, .checking: return "アップデートを確認しています…"
-        case .upToDate: return "最新のバージョンです"
-        case .available(let r): return "新しいバージョン v\(r.version) があります"
-        case .downloading(let r): return "v\(r.version) をダウンロード・検証しています…"
-        case .installing: return "インストールしています…"
-        case .failed: return "アップデートできませんでした"
+        case .idle, .checking: return L("アップデートを確認しています…")
+        case .upToDate: return L("最新のバージョンです")
+        case .available(let r): return L("新しいバージョン v%@ があります", "\(r.version)")
+        case .downloading(let r): return L("v%@ をダウンロード・検証しています…", "\(r.version)")
+        case .installing: return L("インストールしています…")
+        case .failed: return L("アップデートできませんでした")
         }
     }
 
@@ -47,7 +47,7 @@ struct UpdateSheet: View {
         case .idle, .checking, .downloading, .installing:
             ProgressView().progressViewStyle(.linear)
         case .upToDate:
-            Text("お使いのシステムモニターは最新です。").foregroundStyle(.secondary)
+            Text(L("お使いのシステムモニターは最新です。")).foregroundStyle(.secondary)
         case .available(let r):
             ScrollView {
                 Text(Self.cleanNotes(r.notes))
@@ -58,7 +58,7 @@ struct UpdateSheet: View {
             .frame(height: 180)
             .padding(8)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.secondary.opacity(0.08)))
-            Text("ダウンロード後、ハッシュ値・バンドル ID・バージョン・署名を確認してから置き換え、自動で再起動します。")
+            Text(L("ダウンロード後、ハッシュ値・バンドル ID・バージョン・署名を確認してから置き換え、自動で再起動します。"))
                 .font(.caption).foregroundStyle(.secondary)
         case .failed(let msg):
             Text(msg).foregroundStyle(.red).textSelection(.enabled)
@@ -68,20 +68,20 @@ struct UpdateSheet: View {
     @ViewBuilder private var buttons: some View {
         switch u.state {
         case .available(let r):
-            Button("このバージョンをスキップ") { u.skip(r) }
-            Button("あとで") { dismiss() }
+            Button(L("このバージョンをスキップ")) { u.skip(r) }
+            Button(L("あとで")) { dismiss() }
                 .keyboardShortcut(.cancelAction)
-            Button("今すぐアップデート") { u.install(r) }
+            Button(L("今すぐアップデート")) { u.install(r) }
                 .keyboardShortcut(.defaultAction)
         case .downloading, .installing:
             EmptyView()
         case .failed:
-            Button("Releases を開く") {
+            Button(L("Releases を開く")) {
                 NSWorkspace.shared.open(URL(string: "https://github.com/\(Updater.repo)/releases/latest")!)
             }
-            Button("閉じる") { dismiss() }.keyboardShortcut(.defaultAction)
+            Button(L("閉じる")) { dismiss() }.keyboardShortcut(.defaultAction)
         default:
-            Button("閉じる") { dismiss() }.keyboardShortcut(.defaultAction)
+            Button(L("閉じる")) { dismiss() }.keyboardShortcut(.defaultAction)
         }
     }
 

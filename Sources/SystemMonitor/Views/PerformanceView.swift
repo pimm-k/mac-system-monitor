@@ -34,8 +34,8 @@ enum CPUGraphMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .overall: return "全体の使用率"
-        case .logical: return "論理プロセッサ"
+        case .overall: return L("全体の使用率")
+        case .logical: return L("論理プロセッサ")
         }
     }
 }
@@ -75,15 +75,15 @@ struct PerformanceView: View {
     @ViewBuilder private var cards: some View {
         let s = m.system
         card(.cpu, "CPU", "\(Fmt.percent(s.cpu.total))", m.cpuHistory, 100, Palette.cpu)
-        card(.memory, "メモリ",
+        card(.memory, L("メモリ"),
              "\(Fmt.bytes(s.mem.used)) / \(Fmt.bytes(s.mem.total)) (\(Int(s.mem.percent))%)",
              m.memHistory, 100, Palette.memory)
-        card(.disk, "ディスク 0 (\(s.disk.name))", "SSD  \(Int(s.disk.active))%",
+        card(.disk, L("ディスク 0 (%@)", "\(s.disk.name)"), "SSD  \(Int(s.disk.active))%",
              m.diskActiveHistory, 100, Palette.disk)
         ForEach(s.nets) { n in
             let rx = m.netRxHistory[n.id] ?? [], tx = m.netTxHistory[n.id] ?? []
             card(.network(n.id), n.name,
-                 "送信: \(Fmt.bits(n.tx))\n受信: \(Fmt.bits(n.rx))",
+                 L("送信: %@\n受信: %@", "\(Fmt.bits(n.tx))", "\(Fmt.bits(n.rx))"),
                  rx, niceMax(rx + tx), Palette.network, second: tx)
         }
         if let g = s.gpu {
@@ -140,7 +140,7 @@ struct PerformanceView: View {
     }
 
     private var bottomAxis: some View {
-        HStack { Text("60 秒"); Spacer(); Text("0") }
+        HStack { Text(L("60 秒")); Spacer(); Text("0") }
             .scaledFont(.caption).foregroundStyle(.secondary)
     }
 
@@ -153,7 +153,7 @@ struct PerformanceView: View {
 
             // グラフの切り替え
             HStack(spacing: 12) {
-                Picker("グラフの変更", selection: $m.cpuGraphMode) {
+                Picker(L("グラフの変更"), selection: $m.cpuGraphMode) {
                     ForEach(CPUGraphMode.allCases) { mode in Text(mode.title).tag(mode) }
                 }
                 .pickerStyle(.segmented)
@@ -167,7 +167,7 @@ struct PerformanceView: View {
                 if cpuMode == .logical && coreCount > 0 {
                     coreGrid
                 } else {
-                    axis("% 使用率")
+                    axis(L("% 使用率"))
                     LineGraph(series: [GraphSeries(values: m.cpuHistory, color: Palette.cpu)],
                               maxValue: 100, frameColor: Palette.cpu)
                         .frame(height: 300 * ui)
@@ -175,35 +175,35 @@ struct PerformanceView: View {
                 }
             }
             .contextMenu {
-                Menu("グラフの変更") {
-                    Button("全体の使用率") { cpuMode = .overall }
-                    Button("論理プロセッサ") { cpuMode = .logical }
+                Menu(L("グラフの変更")) {
+                    Button(L("全体の使用率")) { cpuMode = .overall }
+                    Button(L("論理プロセッサ")) { cpuMode = .logical }
                 }
             }
 
             HStack(alignment: .top, spacing: 48) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 32) {
-                        Stat(label: "使用率", value: Fmt.percent(s.cpu.total))
-                        Stat(label: "ユーザー / システム",
+                        Stat(label: L("使用率"), value: Fmt.percent(s.cpu.total))
+                        Stat(label: L("ユーザー / システム"),
                              value: "\(Int(s.cpu.user))% / \(Int(s.cpu.system))%")
                     }
                     HStack(spacing: 32) {
-                        Stat(label: "プロセス", value: "\(m.processes.count)")
-                        Stat(label: "スレッド", value: "\(m.totalThreads)")
+                        Stat(label: L("プロセス"), value: "\(m.processes.count)")
+                        Stat(label: L("スレッド"), value: "\(m.totalThreads)")
                     }
                     HStack(spacing: 32) {
-                        Stat(label: "稼働時間", value: Fmt.duration(s.uptime))
-                        Stat(label: "ロードアベレージ",
+                        Stat(label: L("稼働時間"), value: Fmt.duration(s.uptime))
+                        Stat(label: L("ロードアベレージ"),
                              value: s.load.map { String(format: "%.2f", $0) }.joined(separator: " "))
                     }
                 }
                 InfoGrid(rows: [
-                    ("物理コア", "\(info.physicalCores)"),
-                    ("論理プロセッサ", "\(info.logicalCores)"),
-                    ("P コア / E コア", info.pCores.map { p in "\(p) / \(info.eCores ?? 0)" } ?? "—"),
-                    ("アーキテクチャ", info.arch),
-                    ("モデル", info.model),
+                    (L("物理コア"), "\(info.physicalCores)"),
+                    (L("論理プロセッサ"), "\(info.logicalCores)"),
+                    (L("P コア / E コア"), info.pCores.map { p in "\(p) / \(info.eCores ?? 0)" } ?? "—"),
+                    (L("アーキテクチャ"), info.arch),
+                    (L("モデル"), info.model),
                     ("OS", info.osVersion),
                 ])
             }
@@ -215,13 +215,13 @@ struct PerformanceView: View {
         let n = m.coreHistory.count
         return VStack(alignment: .leading, spacing: 10 * ui) {
             HStack(spacing: 12 * ui) {
-                Text("% 使用率 (論理プロセッサごと)").scaledFont(.caption).foregroundStyle(.secondary)
+                Text(L("% 使用率 (論理プロセッサごと)")).scaledFont(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Picker("列数", selection: $m.cpuColumns) {
-                    Text("列数: 自動").tag(0)
-                    Text("2 列").tag(2)
-                    Text("4 列").tag(4)
-                    Text("8 列").tag(8)
+                Picker(L("列数"), selection: $m.cpuColumns) {
+                    Text(L("列数: 自動")).tag(0)
+                    Text(L("2 列")).tag(2)
+                    Text(L("4 列")).tag(4)
+                    Text(L("8 列")).tag(8)
                 }
                 .labelsHidden()
                 .fixedSize()
@@ -229,7 +229,7 @@ struct PerformanceView: View {
             LazyVGrid(columns: gridColumns(for: n), spacing: 6 * ui) {
                 ForEach(0..<n, id: \.self) { i in coreTile(i) }
             }
-            HStack { Text("60 秒"); Spacer(); Text("0") }
+            HStack { Text(L("60 秒")); Spacer(); Text("0") }
                 .scaledFont(.caption).foregroundStyle(.secondary)
         }
     }
@@ -265,32 +265,32 @@ struct PerformanceView: View {
     private var memoryDetail: some View {
         let mem = m.system.mem
         return VStack(alignment: .leading, spacing: 10) {
-            header("メモリ", Fmt.bytes(mem.total))
-            axis("メモリ使用量", Fmt.bytes(mem.total))
+            header(L("メモリ"), Fmt.bytes(mem.total))
+            axis(L("メモリ使用量"), Fmt.bytes(mem.total))
             LineGraph(series: [GraphSeries(values: m.memHistory, color: Palette.memory)],
                       maxValue: 100, frameColor: Palette.memory)
                 .frame(height: 260 * ui)
             bottomAxis
 
-            Text("メモリの構成").scaledFont(.caption).foregroundStyle(.secondary).padding(.top, 6)
+            Text(L("メモリの構成")).scaledFont(.caption).foregroundStyle(.secondary).padding(.top, 6)
             MemoryBar(mem: mem).frame(height: 36 * ui)
 
             HStack(alignment: .top, spacing: 48) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 32) {
-                        Stat(label: "使用中 (圧縮)", value: "\(Fmt.bytes(mem.used)) (\(Fmt.bytes(mem.compressed)))")
-                        Stat(label: "利用可能", value: Fmt.bytes(mem.available))
+                        Stat(label: L("使用中 (圧縮)"), value: "\(Fmt.bytes(mem.used)) (\(Fmt.bytes(mem.compressed)))")
+                        Stat(label: L("利用可能"), value: Fmt.bytes(mem.available))
                     }
                     HStack(spacing: 32) {
-                        Stat(label: "キャッシュ済み", value: Fmt.bytes(mem.cached))
-                        Stat(label: "スワップ使用量", value: "\(Fmt.bytes(mem.swapUsed)) / \(Fmt.bytes(mem.swapTotal))")
+                        Stat(label: L("キャッシュ済み"), value: Fmt.bytes(mem.cached))
+                        Stat(label: L("スワップ使用量"), value: "\(Fmt.bytes(mem.swapUsed)) / \(Fmt.bytes(mem.swapTotal))")
                     }
                 }
                 InfoGrid(rows: [
-                    ("アプリ メモリ", Fmt.bytes(mem.app)),
-                    ("確保されているメモリ", Fmt.bytes(mem.wired)),
-                    ("圧縮", Fmt.bytes(mem.compressed)),
-                    ("キャッシュされたファイル", Fmt.bytes(mem.cached)),
+                    (L("アプリ メモリ"), Fmt.bytes(mem.app)),
+                    (L("確保されているメモリ"), Fmt.bytes(mem.wired)),
+                    (L("圧縮"), Fmt.bytes(mem.compressed)),
+                    (L("キャッシュされたファイル"), Fmt.bytes(mem.cached)),
                 ])
             }
         }
@@ -301,35 +301,35 @@ struct PerformanceView: View {
         let d = m.system.disk
         let tMax = niceMax(m.diskReadHistory + m.diskWriteHistory, minimum: 1_048_576)
         return VStack(alignment: .leading, spacing: 10) {
-            header("ディスク 0 (\(d.name))", "起動ディスク")
-            axis("アクティブな時間")
+            header(L("ディスク 0 (%@)", "\(d.name)"), L("起動ディスク"))
+            axis(L("アクティブな時間"))
             LineGraph(series: [GraphSeries(values: m.diskActiveHistory, color: Palette.disk)],
                       maxValue: 100, frameColor: Palette.disk)
                 .frame(height: 180 * ui)
             bottomAxis
-            axis("ディスク転送速度", Fmt.rate(tMax))
+            axis(L("ディスク転送速度"), Fmt.rate(tMax))
             LineGraph(series: [GraphSeries(values: m.diskReadHistory, color: Palette.disk),
                                GraphSeries(values: m.diskWriteHistory, color: Palette.disk, filled: false, dashed: true)],
                       maxValue: tMax, frameColor: Palette.disk)
                 .frame(height: 120 * ui)
             HStack(spacing: 16) {
-                Label("読み取り", systemImage: "line.diagonal").foregroundStyle(Palette.disk)
-                Label("書き込み (破線)", systemImage: "line.diagonal").foregroundStyle(.secondary)
+                Label(L("読み取り"), systemImage: "line.diagonal").foregroundStyle(Palette.disk)
+                Label(L("書き込み (破線)"), systemImage: "line.diagonal").foregroundStyle(.secondary)
             }
             .scaledFont(.caption)
 
             HStack(alignment: .top, spacing: 48) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack(spacing: 32) {
-                        Stat(label: "アクティブな時間", value: "\(Int(d.active))%")
-                        Stat(label: "読み取り速度", value: Fmt.rate(d.readRate))
-                        Stat(label: "書き込み速度", value: Fmt.rate(d.writeRate))
+                        Stat(label: L("アクティブな時間"), value: "\(Int(d.active))%")
+                        Stat(label: L("読み取り速度"), value: Fmt.rate(d.readRate))
+                        Stat(label: L("書き込み速度"), value: Fmt.rate(d.writeRate))
                     }
                 }
                 InfoGrid(rows: [
-                    ("容量", Fmt.bytes(d.capacity)),
-                    ("空き容量", Fmt.bytes(d.available)),
-                    ("使用済み", Fmt.bytes(d.capacity > d.available ? d.capacity - d.available : 0)),
+                    (L("容量"), Fmt.bytes(d.capacity)),
+                    (L("空き容量"), Fmt.bytes(d.available)),
+                    (L("使用済み"), Fmt.bytes(d.capacity > d.available ? d.capacity - d.available : 0)),
                 ])
             }
         }
@@ -341,29 +341,29 @@ struct PerformanceView: View {
         let maxV = niceMax(rx + tx)
         return VStack(alignment: .leading, spacing: 10) {
             header(n.name, n.id)
-            axis("スループット", Fmt.bits(maxV))
+            axis(L("スループット"), Fmt.bits(maxV))
             LineGraph(series: [GraphSeries(values: rx, color: Palette.network),
                                GraphSeries(values: tx, color: Palette.network, filled: false, dashed: true)],
                       maxValue: maxV, frameColor: Palette.network)
                 .frame(height: 300 * ui)
             bottomAxis
             HStack(spacing: 16) {
-                Label("受信", systemImage: "line.diagonal").foregroundStyle(.secondary)
-                Label("送信 (破線)", systemImage: "line.diagonal").foregroundStyle(.secondary)
+                Label(L("受信"), systemImage: "line.diagonal").foregroundStyle(.secondary)
+                Label(L("送信 (破線)"), systemImage: "line.diagonal").foregroundStyle(.secondary)
             }
             .scaledFont(.caption)
 
             HStack(alignment: .top, spacing: 48) {
                 HStack(spacing: 32) {
-                    Stat(label: "送信", value: Fmt.bits(n.tx))
-                    Stat(label: "受信", value: Fmt.bits(n.rx))
+                    Stat(label: L("送信"), value: Fmt.bits(n.tx))
+                    Stat(label: L("受信"), value: Fmt.bits(n.rx))
                 }
                 InfoGrid(rows: [
-                    ("アダプター名", n.name),
-                    ("BSD 名", n.id),
-                    ("MAC アドレス", n.mac ?? "—"),
-                    ("IPv4 アドレス", n.ipv4.isEmpty ? "—" : n.ipv4.joined(separator: "\n")),
-                    ("IPv6 アドレス", n.ipv6.isEmpty ? "—" : n.ipv6.joined(separator: "\n")),
+                    (L("アダプター名"), n.name),
+                    (L("BSD 名"), n.id),
+                    (L("MAC アドレス"), n.mac ?? "—"),
+                    (L("IPv4 アドレス"), n.ipv4.isEmpty ? "—" : n.ipv4.joined(separator: "\n")),
+                    (L("IPv6 アドレス"), n.ipv6.isEmpty ? "—" : n.ipv6.joined(separator: "\n")),
                 ])
             }
         }
@@ -374,19 +374,19 @@ struct PerformanceView: View {
         let g = m.system.gpu ?? GPUSnapshot()
         return VStack(alignment: .leading, spacing: 10) {
             header("GPU", g.name)
-            axis("使用率")
+            axis(L("使用率"))
             LineGraph(series: [GraphSeries(values: m.gpuHistory, color: Palette.gpu)],
                       maxValue: 100, frameColor: Palette.gpu)
                 .frame(height: 300 * ui)
             bottomAxis
             HStack(alignment: .top, spacing: 48) {
                 HStack(spacing: 32) {
-                    Stat(label: "使用率", value: "\(Int(g.utilization))%")
-                    Stat(label: "使用中の GPU メモリ", value: Fmt.bytes(g.memoryUsed))
+                    Stat(label: L("使用率"), value: "\(Int(g.utilization))%")
+                    Stat(label: L("使用中の GPU メモリ"), value: Fmt.bytes(g.memoryUsed))
                 }
                 InfoGrid(rows: [
-                    ("名前", g.name),
-                    ("GPU コア", g.cores.map { String($0) } ?? "—"),
+                    (L("名前"), g.name),
+                    (L("GPU コア"), g.cores.map { String($0) } ?? "—"),
                 ])
             }
         }
@@ -400,10 +400,10 @@ private struct MemoryBar: View {
     var body: some View {
         let total = Double(max(mem.total, 1))
         let parts: [(String, UInt64, Double)] = [
-            ("アプリ", mem.app, 0.85),
-            ("確保", mem.wired, 0.6),
-            ("圧縮", mem.compressed, 0.4),
-            ("キャッシュ", mem.cached, 0.18),
+            (L("アプリ"), mem.app, 0.85),
+            (L("確保"), mem.wired, 0.6),
+            (L("圧縮"), mem.compressed, 0.4),
+            (L("キャッシュ"), mem.cached, 0.18),
         ]
         GeometryReader { geo in
             HStack(spacing: 1) {

@@ -51,17 +51,17 @@ struct ProcessesView: View {
     var body: some View {
         let rows = buildRows()
         let cpuTitle = "CPU  \(Int(m.system.cpu.total.rounded()))%"
-        let memTitle = "メモリ  \(Int(m.system.mem.percent.rounded()))%"
-        let diskTitle = "ディスク  \(Int(m.system.disk.active.rounded()))%"
+        let memTitle = L("メモリ  %@%%", "\(Int(m.system.mem.percent.rounded()))")
+        let diskTitle = L("ディスク  %@%%", "\(Int(m.system.disk.active.rounded()))")
         let total = Double(max(m.system.mem.total, 1))
 
         Table(rows, selection: $selectionBox.value, sortOrder: $sortOrderBox.value) {
-            TableColumn("名前", value: \.name) { row in
+            TableColumn(L("名前"), value: \.name) { row in
                 NameCell(row: row, expanded: expanded.contains(row.pid)) { toggle(row.pid) }
             }
             .width(min: 240 * ui, ideal: 340 * ui)
 
-            TableColumn("状態", value: \.status) { row in
+            TableColumn(L("状態"), value: \.status) { row in
                 Text(row.status).foregroundStyle(.secondary)
             }
             .width(min: 40 * ui, ideal: 60 * ui)
@@ -78,7 +78,7 @@ struct ProcessesView: View {
             .width(min: 90 * ui, ideal: 110 * ui)
 
             TableColumn(diskTitle, value: \.disk) { row in
-                HeatCell(text: row.kind == .header ? "" : String(format: "%.1f MB/秒", row.disk / 1_048_576),
+                HeatCell(text: row.kind == .header ? "" : String(format: L("%.1f MB/秒"), row.disk / 1_048_576),
                          level: row.disk / 20_000_000)
             }
             .width(min: 90 * ui, ideal: 110 * ui)
@@ -86,16 +86,16 @@ struct ProcessesView: View {
         .contextMenu(forSelectionType: String.self) { ids in
             let targets = rows.filter { ids.contains($0.id) && $0.kind != .header }
             if !targets.isEmpty {
-                Button("タスクの終了") { end(targets, force: false) }
-                Button("強制終了") { selection = ids; confirmForce = true }
+                Button(L("タスクの終了")) { end(targets, force: false) }
+                Button(L("強制終了")) { selection = ids; confirmForce = true }
                 Divider()
                 if let first = targets.first {
-                    Button("ファイルの場所を開く") { m.revealInFinder(path: first.bundlePath ?? first.path) }
-                    Button("詳細に移動") {
+                    Button(L("ファイルの場所を開く")) { m.revealInFinder(path: first.bundlePath ?? first.path) }
+                    Button(L("詳細に移動")) {
                         m.focusPid = first.pid
                         m.tab = .details
                     }
-                    Button("PID をコピー") {
+                    Button(L("PID をコピー")) {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(String(first.pid), forType: .string)
                     }
@@ -105,21 +105,21 @@ struct ProcessesView: View {
             for r in rows where ids.contains(r.id) && r.childCount > 0 { toggle(r.pid) }
         }
         .onDeleteCommand { end(selectedRows(rows), force: false) }
-        .confirmationDialog("選択したプロセスを強制終了しますか？", isPresented: $confirmForceBox.value) {
-            Button("強制終了", role: .destructive) { end(selectedRows(rows), force: true) }
+        .confirmationDialog(L("選択したプロセスを強制終了しますか？"), isPresented: $confirmForceBox.value) {
+            Button(L("強制終了"), role: .destructive) { end(selectedRows(rows), force: true) }
         } message: {
-            Text("保存されていないデータは失われます。")
+            Text(L("保存されていないデータは失われます。"))
         }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button { m.runNewTask() } label: {
-                    Label("新しいタスクを実行する", systemImage: "plus.app")
+                    Label(L("新しいタスクを実行する"), systemImage: "plus.app")
                 }
-                .help("新しいタスクを実行する")
+                .help(L("新しいタスクを実行する"))
                 Button { end(selectedRows(rows), force: false) } label: {
-                    Label("タスクを終了する", systemImage: "xmark.circle")
+                    Label(L("タスクを終了する"), systemImage: "xmark.circle")
                 }
-                .help("タスクを終了する")
+                .help(L("タスクを終了する"))
                 .disabled(selectedRows(rows).isEmpty)
             }
         }
@@ -171,7 +171,7 @@ struct ProcessesView: View {
         let bgRows = background.filter(matches).map { row($0, kind: .background) }.sorted(using: sortOrder)
 
         var out: [ProcRow] = []
-        out.append(header("h-apps", "アプリ (\(appRows.count))"))
+        out.append(header("h-apps", L("アプリ (%@)", "\(appRows.count)")))
         for r in appRows {
             out.append(r)
             if expanded.contains(r.pid) || !q.isEmpty {
@@ -179,7 +179,7 @@ struct ProcessesView: View {
                 out.append(contentsOf: kids)
             }
         }
-        out.append(header("h-bg", "バックグラウンド プロセス (\(bgRows.count))"))
+        out.append(header("h-bg", L("バックグラウンド プロセス (%@)", "\(bgRows.count)")))
         out.append(contentsOf: bgRows)
         return out
     }

@@ -8,12 +8,12 @@ enum Tab: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .processes: return "プロセス"
-        case .performance: return "パフォーマンス"
-        case .history: return "履歴"
-        case .startup: return "スタートアップ アプリ"
-        case .users: return "ユーザー"
-        case .details: return "詳細"
+        case .processes: return L("プロセス")
+        case .performance: return L("パフォーマンス")
+        case .history: return L("履歴")
+        case .startup: return L("スタートアップ アプリ")
+        case .users: return LK("tab.users", "ユーザー")
+        case .details: return L("詳細")
         }
     }
     var icon: String {
@@ -33,10 +33,10 @@ enum UpdateSpeed: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .fast: return "高速 (0.5 秒)"
-        case .normal: return "標準 (1 秒)"
-        case .slow: return "低速 (4 秒)"
-        case .paused: return "一時停止"
+        case .fast: return L("高速 (0.5 秒)")
+        case .normal: return L("標準 (1 秒)")
+        case .slow: return L("低速 (4 秒)")
+        case .paused: return L("一時停止")
         }
     }
     var interval: Double {
@@ -266,19 +266,19 @@ final class Monitor: ObservableObject {
             // 承認されるまでに PID が入れ替わっても別プロセスを終了しないよう、実行直前に再確認する
             let cmds = denied.compactMap { ProcIdentity.guarded(pid: $0, command: "/bin/kill -\(sig) \($0)") }
             if cmds.isEmpty {
-                alert = AlertInfo(title: "タスクを終了できませんでした", message: "対象のプロセスはすでに終了しています。")
+                alert = AlertInfo(title: L("タスクを終了できませんでした"), message: L("対象のプロセスはすでに終了しています。"))
             } else {
                 alert = AlertInfo(
-                    title: "アクセスが拒否されました",
-                    message: "PID \(list) は別のユーザー (root など) のプロセスです。管理者として終了しますか？",
+                    title: L("アクセスが拒否されました"),
+                    message: L("PID %@ は別のユーザー (root など) のプロセスです。管理者として終了しますか？", "\(list)"),
                     adminCommand: cmds.joined(separator: "; "))
             }
         } else if !replaced.isEmpty {
             alert = AlertInfo(
-                title: "タスクを終了しませんでした",
-                message: "PID \(replaced.map { String($0) }.joined(separator: " ")) は一覧の表示後に別のプロセスへ入れ替わったため、安全のため終了を中止しました。")
+                title: L("タスクを終了しませんでした"),
+                message: L("PID %@ は一覧の表示後に別のプロセスへ入れ替わったため、安全のため終了を中止しました。", "\(replaced.map { String($0) }.joined(separator: " "))"))
         } else if !errors.isEmpty {
-            alert = AlertInfo(title: "タスクを終了できませんでした", message: errors.joined(separator: "\n"))
+            alert = AlertInfo(title: L("タスクを終了できませんでした"), message: errors.joined(separator: "\n"))
         }
     }
 
@@ -300,15 +300,15 @@ final class Monitor: ObservableObject {
     func setPriority(pid: pid_t, nice: Int32) {
         let expected = processes.first(where: { $0.pid == pid })?.path
         guard ProcIdentity.matches(pid: pid, expectedPath: expected) else {
-            alert = AlertInfo(title: "優先度を変更しませんでした",
-                              message: "PID \(pid) は別のプロセスへ入れ替わったため、変更を中止しました。")
+            alert = AlertInfo(title: L("優先度を変更しませんでした"),
+                              message: L("PID %@ は別のプロセスへ入れ替わったため、変更を中止しました。", "\(pid)"))
             return
         }
         if setpriority(PRIO_PROCESS, id_t(pid), nice) != 0 {
             guard let cmd = ProcIdentity.guarded(pid: pid, command: "/usr/bin/renice -n \(nice) -p \(pid)") else { return }
             alert = AlertInfo(
-                title: "優先度を変更できません",
-                message: "優先度を上げる、または他ユーザーのプロセスを変更するには管理者権限が必要です。",
+                title: L("優先度を変更できません"),
+                message: L("優先度を上げる、または他ユーザーのプロセスを変更するには管理者権限が必要です。"),
                 adminCommand: cmd)
         }
     }
@@ -335,7 +335,7 @@ final class Monitor: ObservableObject {
             let r = Shell.run("/usr/bin/osascript", ["-e", script])
             if r.status != 0 && !r.err.contains("-128") {
                 await MainActor.run {
-                    self.alert = AlertInfo(title: "実行に失敗しました", message: r.err)
+                    self.alert = AlertInfo(title: L("実行に失敗しました"), message: r.err)
                 }
             }
         }
@@ -358,8 +358,8 @@ final class Monitor: ObservableObject {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.application]
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
-        panel.prompt = "実行"
-        panel.message = "実行するアプリを選んでください"
+        panel.prompt = L("実行")
+        panel.message = L("実行するアプリを選んでください")
         if panel.runModal() == .OK, let url = panel.url {
             NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, _ in }
         }
