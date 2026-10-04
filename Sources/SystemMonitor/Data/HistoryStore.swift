@@ -141,6 +141,43 @@ struct HistoryStats {
     var fileSize: UInt64 = 0
 }
 
+// MARK: - 削除できるデータの種類
+
+enum HistoryDataKind: String, CaseIterable, Identifiable, Sendable {
+    case graphs, apps, spikes, network, events
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .graphs: return "推移グラフ"
+        case .apps: return "アプリの履歴"
+        case .spikes: return "高負荷の記録"
+        case .network: return "通信の警告"
+        case .events: return "起動・終了ログ"
+        }
+    }
+    var detail: String {
+        switch self {
+        case .graphs: return "CPU・メモリ・ディスク・ネットワーク・GPU の推移"
+        case .apps: return "アプリごとの CPU 時間・ディスク量など"
+        case .spikes: return "CPU・メモリが高負荷になった時の上位プロセス"
+        case .network: return "怪しい通信の検知記録（通知しない設定は残ります）"
+        case .events: return "プロセスの起動・終了の記録"
+        }
+    }
+    /// このデータを保存しているテーブル
+    var tables: [String] {
+        switch self {
+        case .graphs: return ["samples", "samples_min"]
+        case .apps: return ["app_usage"]
+        case .spikes: return ["spikes"]
+        case .network: return ["net_alerts"]
+        case .events: return ["events"]
+        }
+    }
+    /// 件数を数えるテーブル
+    var countTable: String { self == .graphs ? "samples_min" : tables[0] }
+}
+
 // MARK: - 履歴データベース
 
 final class HistoryStore: @unchecked Sendable {
@@ -254,8 +291,32 @@ final class HistoryStore: @unchecked Sendable {
     }
 
     func deleteAll() {
-        db.exec("DELETE FROM samples; DELETE FROM samples_min; DELETE FROM app_usage; DELETE FROM events; DELETE FROM spikes; DELETE FROM net_alerts;")
-        db.exec("VACUUM")
+        delete(Set(HistoryDataKind.allCases))
+    }
+
+    /// 選んだ種類のデータだけを削除する
+    func delete(_ kinds: Set<HistoryDataKind>) {
+        guard !kinds.isEmpty else { return }
+        db.exec("BEGIN")
+        // テーブル名は固定の一覧から選ぶ (外部からの文字列は使わない)
+        for k in HistoryDataKind.allCases where kinds.contains(k) {
+            for t in k.tables { db.exec("DELETE FROM \(t)") }
+        }
+        db.exec("COMMIT")
+        if kinds.count == HistoryDataKind.allCases.count {
+            db.exec("VACUUM")
+        } else {
+            db.exec("PRAGMA incremental_vacuum")
+        }
+    }
+
+    /// 種類ごとの件数 (削除画面用)
+    func counts() -> [HistoryDataKind: Int] {
+        var out: [HistoryDataKind: Int] = [:]
+        for k in HistoryDataKind.allCases {
+            db.query("SELECT count(*) FROM \(k.countTable)") { r in out[k] = Int(r.int(0)) }
+        }
+        return out
     }
 
     // MARK: 読み出し (画面用)
