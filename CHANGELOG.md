@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-10-05
+
 ### 追加
 - **英語に対応**（画面・メニュー・通知・エラー・アップデート画面）。Mac の言語設定に合わせて自動で切り替え
 - 「オプション → 言語 / Language」で、アプリだけ「システムの設定に従う / 日本語 / English」を選べるように（再起動で反映）
@@ -133,7 +135,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...v2.0.0
