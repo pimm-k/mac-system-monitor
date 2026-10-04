@@ -29,25 +29,6 @@ enum PerfItem: Hashable {
     }
 }
 
-/// 論理プロセッサの並べ方
-enum CPUGrouping: String, CaseIterable, Identifiable {
-    case all, coreType
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .all: return "まとめて表示"
-        case .coreType: return "高性能 / 高効率で分ける"
-        }
-    }
-}
-
-/// 論理プロセッサのまとまり (例: 高性能コア 4 個 / 高効率コア 4 個)
-struct CoreGroup: Identifiable {
-    let id: String
-    let title: String?
-    let indices: [Int]
-}
-
 enum CPUGraphMode: String, CaseIterable, Identifiable {
     case overall, logical
     var id: String { rawValue }
@@ -231,18 +212,11 @@ struct PerformanceView: View {
 
     /// 論理プロセッサの一覧 (クリックで拡大)
     private var coreGrid: some View {
-        VStack(alignment: .leading, spacing: 10 * ui) {
+        let n = m.coreHistory.count
+        return VStack(alignment: .leading, spacing: 10 * ui) {
             HStack(spacing: 12 * ui) {
                 Text("% 使用率 (論理プロセッサごと)").scaledFont(.caption).foregroundStyle(.secondary)
                 Spacer()
-                if hasCoreTypes {
-                    Picker("並べ方", selection: $m.cpuGrouping) {
-                        ForEach(CPUGrouping.allCases) { g in Text(g.title).tag(g) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .fixedSize()
-                }
                 Picker("列数", selection: $m.cpuColumns) {
                     Text("列数: 自動").tag(0)
                     Text("2 列").tag(2)
@@ -252,15 +226,8 @@ struct PerformanceView: View {
                 .labelsHidden()
                 .fixedSize()
             }
-            ForEach(coreGroups) { group in
-                VStack(alignment: .leading, spacing: 4 * ui) {
-                    if let title = group.title {
-                        Text("\(title)（\(group.indices.count)）").scaledFont(.headline)
-                    }
-                    LazyVGrid(columns: gridColumns(for: group.indices.count), spacing: 6 * ui) {
-                        ForEach(group.indices, id: \.self) { i in coreTile(i) }
-                    }
-                }
+            LazyVGrid(columns: gridColumns(for: n), spacing: 6 * ui) {
+                ForEach(0..<n, id: \.self) { i in coreTile(i) }
             }
             HStack { Text("60 秒"); Spacer(); Text("0") }
                 .scaledFont(.caption).foregroundStyle(.secondary)
@@ -281,32 +248,11 @@ struct PerformanceView: View {
             }
     }
 
-    /// P コア / E コアの数が分かるか (Apple Silicon)
-    private var hasCoreTypes: Bool {
-        guard let e = m.staticInfo.eCores, e > 0, m.staticInfo.pCores != nil else { return false }
-        return e < m.coreHistory.count
-    }
-
-    private var coreGroups: [CoreGroup] {
-        let n = m.coreHistory.count
-        if m.cpuGrouping == .coreType, hasCoreTypes, let e = m.staticInfo.eCores {
-            return [
-                CoreGroup(id: "p", title: "高性能コア (P)", indices: Array(e..<n)),
-                CoreGroup(id: "e", title: "高効率コア (E)", indices: Array(0..<e)),
-            ]
-        }
-        return [CoreGroup(id: "all", title: nil, indices: Array(0..<n))]
-    }
-
-    /// 列数: 指定があればその数、自動なら分けたときは 1 グループ 1 行 (最大 8 列)、まとめて表示なら幅に合わせる
+    /// 列数: 指定があればその数。自動なら 16 個以下は半分ずつ 2 段 (8 個 → 4 列 × 2 段: 0〜3 / 4〜7)
     private func gridColumns(for count: Int) -> [GridItem] {
-        let fixed = m.cpuColumns > 0
-            ? m.cpuColumns
-            : (m.cpuGrouping == .coreType && hasCoreTypes ? min(max(count, 1), 8) : 0)
-        if fixed > 0 {
-            return Array(repeating: GridItem(.flexible(), spacing: 6 * ui), count: fixed)
-        }
-        return [GridItem(.adaptive(minimum: 150 * ui), spacing: 6 * ui)]
+        let auto = count <= 16 ? max(1, (count + 1) / 2) : 8
+        let cols = m.cpuColumns > 0 ? m.cpuColumns : auto
+        return Array(repeating: GridItem(.flexible(), spacing: 6 * ui), count: cols)
     }
 
     /// Apple Silicon では先頭の論理プロセッサが E コア
