@@ -19,7 +19,7 @@ final class HistoryRecorder: @unchecked Sendable {
 
     private var store: HistoryStore?
     private let sys = SystemSampler()
-    private let procs = ProcessSampler()
+    private let procs = ProcessSampler(psInterval: 30)   // 履歴は 10 分単位の集計なので ps は控えめに
     private var lockFD: Int32 = -1
 
     private var prevProcs: [pid_t: ProcBrief]? = nil

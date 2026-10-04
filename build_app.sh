@@ -36,6 +36,8 @@ echo "▶ $APP を作成中..."
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/TaskManager"
+# 軽量化: デバッグ用のシンボル情報を取り除いてサイズを小さくする
+strip -S -x "$APP/Contents/MacOS/TaskManager"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
 # Info.plist にバージョンを書き込む
