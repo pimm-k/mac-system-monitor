@@ -118,10 +118,15 @@ final class HistoryModel: ObservableObject {
         return error
     }
 
-    func deleteAll() async {
-        guard let store else { return }
-        await Task.detached { store.deleteAll() }.value
+    func delete(_ kinds: Set<HistoryDataKind>) async {
+        guard let store, !kinds.isEmpty else { return }
+        await Task.detached { store.delete(kinds) }.value
         await refresh()
+    }
+
+    func counts() async -> [HistoryDataKind: Int] {
+        guard let store else { return [:] }
+        return await Task.detached { store.counts() }.value
     }
 
     /// 記録の状態 (表示用)
@@ -178,10 +183,8 @@ struct HistoryView: View {
                 try? await Task.sleep(nanoseconds: 10_000_000_000)
             }
         }
-        .confirmationDialog("すべての履歴を削除しますか？", isPresented: $confirmDeleteBox.value) {
-            Button("削除", role: .destructive) { Task { await model.deleteAll() } }
-        } message: {
-            Text("記録したグラフ・アプリの履歴・ログ・通信の警告はすべて消え、元に戻せません。")
+        .sheet(isPresented: $confirmDeleteBox.value) {
+            DeleteHistorySheet(model: model)
         }
     }
 
@@ -229,7 +232,7 @@ struct HistoryView: View {
                         NSWorkspace.shared.activateFileViewerSelecting([HistoryPaths.database])
                     }
                     Divider()
-                    Button("すべての履歴を削除…", role: .destructive) { confirmDeleteBox.value = true }
+                    Button("履歴を削除…", role: .destructive) { confirmDeleteBox.value = true }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -700,5 +703,89 @@ struct HistoryChart: View {
             let maxV = series.flatMap { s in points.map { $0[keyPath: s.key] } }.max() ?? 0
             return 0...max(maxV * 1.1, unit == .bitsPerSec ? 1000 : 1024)
         }
+    }
+}
+
+// MARK: - 履歴の削除 (種類を選んで削除)
+
+@MainActor
+private struct DeleteHistorySheet: View {
+    @ObservedObject var model: HistoryModel
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var selectedBox = Box<Set<HistoryDataKind>>([])
+    @StateObject private var countsBox = Box<[HistoryDataKind: Int]?>(nil)
+    @StateObject private var confirmBox = Box<Bool>(false)
+    @StateObject private var deletingBox = Box<Bool>(false)
+
+    private var selected: Set<HistoryDataKind> { selectedBox.value }
+    private var allSelected: Bool { selected.count == HistoryDataKind.allCases.count }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("削除する履歴を選んでください").font(.headline)
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(HistoryDataKind.allCases) { k in
+                    Toggle(isOn: Binding(
+                        get: { selectedBox.value.contains(k) },
+                        set: { on in
+                            if on { selectedBox.value.insert(k) } else { selectedBox.value.remove(k) }
+                        })) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            HStack {
+                                Text(k.title)
+                                Text(countText(k)).foregroundStyle(.secondary).monospacedDigit()
+                            }
+                            Text(k.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .toggleStyle(.checkbox)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
+
+            Text("削除した履歴は元に戻せません。")
+                .font(.caption).foregroundStyle(.secondary)
+
+            HStack {
+                Button(allSelected ? "選択をすべて解除" : "すべて選択") {
+                    selectedBox.value = allSelected ? [] : Set(HistoryDataKind.allCases)
+                }
+                Spacer()
+                if deletingBox.value { ProgressView().controlSize(.small) }
+                Button("キャンセル") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Button("削除…", role: .destructive) { confirmBox.value = true }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(selected.isEmpty || deletingBox.value)
+            }
+        }
+        .padding(20)
+        .frame(width: 440)
+        .task { countsBox.value = await model.counts() }
+        .confirmationDialog(confirmTitle, isPresented: $confirmBox.value) {
+            Button("削除", role: .destructive) {
+                let kinds = selected
+                deletingBox.value = true
+                Task {
+                    await model.delete(kinds)
+                    deletingBox.value = false
+                    dismiss()
+                }
+            }
+        } message: {
+            Text(HistoryDataKind.allCases.filter { selected.contains($0) }.map { "・" + $0.title }.joined(separator: "\n")
+                 + "\n\nこの操作は元に戻せません。")
+        }
+    }
+
+    private var confirmTitle: String {
+        allSelected ? "すべての履歴を削除しますか？" : "選んだ \(selected.count) 種類の履歴を削除しますか？"
+    }
+
+    private func countText(_ k: HistoryDataKind) -> String {
+        guard let c = countsBox.value?[k] else { return "" }
+        return k == .graphs ? "（\(c) 分ぶん）" : "（\(c) 件）"
     }
 }
