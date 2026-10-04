@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "TaskManager",
+    name: "SystemMonitor",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "TaskManager",
-            path: "Sources/TaskManager",
+            name: "SystemMonitor",
+            path: "Sources/SystemMonitor",
             linkerSettings: [
                 .linkedFramework("IOKit"),
                 .linkedFramework("SystemConfiguration"),

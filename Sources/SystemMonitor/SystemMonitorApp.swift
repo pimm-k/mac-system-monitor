@@ -20,17 +20,19 @@ enum Entry {
         if CommandLine.arguments.contains(HeadlessRecorder.flag) {
             HeadlessRecorder.run()
         } else {
-            TaskManagerApp.main()
+            // 旧名「TaskManager」からの設定・履歴・バックグラウンド記録の引き継ぎ (初回のみ)
+            LegacyMigration.runIfNeeded()
+            SystemMonitorApp.main()
         }
     }
 }
 
-struct TaskManagerApp: App {
+struct SystemMonitorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var monitor = Monitor()
 
     var body: some Scene {
-        Window("タスク マネージャー", id: "main") {
+        Window("システムモニター", id: "main") {
             ContentView()
                 .environmentObject(monitor)
                 .frame(minWidth: 960, minHeight: 600)

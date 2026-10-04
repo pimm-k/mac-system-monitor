@@ -13,7 +13,7 @@
 | SystemConfiguration / `getifaddrs` | `SystemSampler.swift` | ネットワーク統計・IP の読み取り | networking |
 | SQLite（macOS 同梱の `libsqlite3`） | `HistoryStore.swift` | 履歴の保存。SQL はすべてプレースホルダで値を渡す | SQLite |
 | SwiftUI / AppKit / Swift Charts | `Views/` | 画面表示 | SwiftUI, AppKit |
-| LaunchAgent (`launchctl`) | `HistoryRecorder.swift` / `LaunchItems.swift` | バックグラウンド記録の登録、スタートアップ項目の有効化・無効化 | launchd, launchctl |
+| LaunchAgent (`launchctl`) | `HistoryRecorder.swift` / `LaunchItems.swift` / `LegacyMigration.swift` | バックグラウンド記録の登録、スタートアップ項目の有効化・無効化 | launchd, launchctl |
 | `/usr/bin/osascript`（`do shell script … with administrator privileges`） | `Monitor.swift` | 管理者権限が必要な操作（kill / renice / launchctl） | AppleScript, Authorization, privilege escalation |
 | `/bin/ps` / `/bin/kill` / `/usr/bin/renice` | `ProcessSampler.swift` / `Utilities.swift` | 他ユーザーのプロセス情報取得、終了・優先度変更 | ps, setuid |
 | `NSWorkspace` / `NSRunningApplication` | `Monitor.swift` | アプリの一覧・終了 | AppKit |

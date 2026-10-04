@@ -1,0 +1,3 @@
+/* App display name */
+CFBundleName = "System Monitor";
+CFBundleDisplayName = "System Monitor";

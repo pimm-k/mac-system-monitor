@@ -10,6 +10,19 @@
 
 ## [Unreleased]
 
+### 変更（互換性に影響あり）
+- **名前を「タスク マネージャー」から「システムモニター」（System Monitor）に変更**
+  - アプリ: `TaskManager.app` → `SystemMonitor.app`（日本語環境では「システムモニター」、英語環境では「System Monitor」と表示）
+  - バンドル ID: `local.pim.taskmanager` → `local.pim.systemmonitor`
+  - バックグラウンド記録: `local.pim.taskmanager.recorder` → `local.pim.systemmonitor.recorder`
+  - 履歴の保存先: `~/Library/Application Support/TaskManager` → `SystemMonitor`
+  - 配布ファイル: `TaskManager-vX.Y.Z.dmg` → `SystemMonitor-vX.Y.Z.dmg`
+  - リポジトリ: `mac-task-manager` → `mac-system-monitor`（旧 URL は GitHub が自動で転送）
+
+### 追加
+- 旧名からの自動引き継ぎ：初回起動時に、設定・履歴データ・バックグラウンド記録を新しい名前へ移行
+- `./build_app.sh --install` で、旧名の `TaskManager.app` が残っていれば終了して削除
+
 ## [1.4.2] - 2026-10-04
 
 ### 改善（軽量化）
@@ -91,11 +104,11 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.2...HEAD
-[1.4.2]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.1...v1.4.2
-[1.4.1]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.0...v1.4.1
-[1.4.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.0.0...v1.1.0
-[1.0.0]: https://github.com/pimm-k/mac-task-manager/releases/tag/v1.0.0
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/pimm-k/mac-system-monitor/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/pimm-k/mac-system-monitor/releases/tag/v1.0.0

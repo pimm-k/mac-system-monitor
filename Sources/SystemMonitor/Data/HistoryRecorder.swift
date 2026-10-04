@@ -197,7 +197,7 @@ final class HistoryRecorder: @unchecked Sendable {
 enum HeadlessRecorder {
     static let flag = "--record"
 
-    /// LaunchAgent から `TaskManager --record` で起動されたときの処理。終了しない。
+    /// LaunchAgent から `SystemMonitor --record` で起動されたときの処理。終了しない。
     static func run() -> Never {
         setpriority(PRIO_PROCESS, 0, 10)   // 優先度を下げて他の作業の邪魔をしない
         let recorder = HistoryRecorder()
@@ -213,7 +213,7 @@ enum HeadlessRecorder {
 // MARK: - LaunchAgent の管理
 
 enum RecorderAgent {
-    static let label = "local.pim.taskmanager.recorder"
+    static let label = "local.pim.systemmonitor.recorder"
 
     static var plistURL: URL {
         FileManager.default.homeDirectoryForCurrentUser

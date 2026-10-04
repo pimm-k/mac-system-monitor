@@ -6,7 +6,7 @@ import SQLite3
 enum HistoryPaths {
     static var directory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("TaskManager", isDirectory: true)
+        return base.appendingPathComponent("SystemMonitor", isDirectory: true)
     }
     static var database: URL { directory.appendingPathComponent("history.sqlite") }
     static var lock: URL { directory.appendingPathComponent("recorder.lock") }
