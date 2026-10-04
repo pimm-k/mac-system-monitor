@@ -76,8 +76,10 @@ struct ContentView: View {
                     Button(L("アップデートを確認…")) { Task { await updater.check(userInitiated: true) } }
                     Toggle(L("起動時にアップデートを確認"), isOn: $updater.autoCheck)
                 } label: {
-                    Label(L("オプション"), systemImage: "ellipsis.circle")
+                    // アイコン (…) だけだと分かりにくいので文字で表示する
+                    Text(L("オプション"))
                 }
+                .help(L("更新速度・表示サイズ・言語・アップデートなどの設定"))
             }
         }
         .alert(Text(m.alert?.title ?? ""),
