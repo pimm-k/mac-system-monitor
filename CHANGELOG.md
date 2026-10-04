@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-10-04
+
 ### 変更
 - CPU の論理プロセッサは一覧のみに戻し、CPU 0 から順に並べるように（高性能 / 高効率で分ける表示を廃止）
 - 列数「自動」のときは半分ずつ 2 段に並べるように（8 個なら 0〜3 / 4〜7 の 4 列 × 2 段）。2 / 4 / 8 列の指定は従来どおり
@@ -80,7 +82,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/pimm-k/mac-task-manager/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/pimm-k/mac-task-manager/compare/v1.1.0...v1.2.0
