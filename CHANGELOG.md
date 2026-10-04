@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-10-05
+
 ### 修正
 - 日本語の Mac（または言語を「日本語」に設定）でも英語で表示されてしまう問題を修正（v2.3.0）
 
@@ -141,7 +143,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...HEAD
+[2.3.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.0.0...v2.1.0
