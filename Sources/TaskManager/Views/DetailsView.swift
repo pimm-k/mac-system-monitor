@@ -3,6 +3,7 @@ import AppKit
 
 @MainActor
 struct DetailsView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     let search: String
 
@@ -44,33 +45,33 @@ struct DetailsView: View {
                 TableColumn("名前", value: \.name) { p in
                     HStack(spacing: 6) {
                         Image(nsImage: IconCache.shared.icon(path: p.path, bundlePath: p.bundlePath))
-                            .resizable().frame(width: 16, height: 16)
+                            .resizable().frame(width: 16 * ui, height: 16 * ui)
                         Text(p.name).lineLimit(1)
                     }
                 }
-                .width(min: 180, ideal: 240)
+                .width(min: 180 * ui, ideal: 240 * ui)
                 TableColumn("PID", value: \.pid) { p in Text(String(p.pid)).monospacedDigit() }
-                    .width(min: 45, ideal: 60)
+                    .width(min: 45 * ui, ideal: 60 * ui)
                 TableColumn("状態", value: \.statusCode) { p in Text(p.statusLong) }
-                    .width(min: 45, ideal: 60)
-                TableColumn("ユーザー名", value: \.user).width(min: 70, ideal: 110)
+                    .width(min: 45 * ui, ideal: 60 * ui)
+                TableColumn("ユーザー名", value: \.user).width(min: 70 * ui, ideal: 110 * ui)
                 TableColumn("CPU", value: \.cpu) { p in
                     HeatCell(text: String(format: "%.1f", p.cpu), level: p.cpu / 40)
                 }
-                .width(min: 50, ideal: 60)
+                .width(min: 50 * ui, ideal: 60 * ui)
                 TableColumn("CPU 時間", value: \.cpuTime) { p in Text(Fmt.cpuTime(p.cpuTime)).monospacedDigit() }
-                    .width(min: 65, ideal: 80)
+                    .width(min: 65 * ui, ideal: 80 * ui)
                 TableColumn("メモリ", value: \.memory) { p in
                     HeatCell(text: Fmt.bytes(p.memory), level: Double(p.memory) / total * 8)
                 }
-                .width(min: 70, ideal: 90)
+                .width(min: 70 * ui, ideal: 90 * ui)
                 TableColumn("スレッド", value: \.threads) { p in
                     Text(p.limited ? "—" : "\(p.threads)").monospacedDigit()
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                .width(min: 45, ideal: 55)
+                .width(min: 45 * ui, ideal: 55 * ui)
                 TableColumn("優先度", value: \.nice) { p in Text("\(p.nice)").monospacedDigit() }
-                    .width(min: 40, ideal: 50)
+                    .width(min: 40 * ui, ideal: 50 * ui)
                 TableColumn("パス", value: \.path) { p in
                     Text(p.path).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }

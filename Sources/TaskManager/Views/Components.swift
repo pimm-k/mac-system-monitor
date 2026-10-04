@@ -12,6 +12,7 @@ struct GraphSeries {
 }
 
 struct LineGraph: View {
+    @Environment(\.uiScale) private var ui
     var series: [GraphSeries]
     var maxValue: Double
     var frameColor: Color
@@ -102,6 +103,7 @@ final class IconCache {
 // MARK: - 小物
 
 struct HeatCell: View {
+    @Environment(\.uiScale) private var ui
     let text: String
     let level: Double
     var body: some View {
@@ -115,17 +117,19 @@ struct HeatCell: View {
 }
 
 struct Stat: View {
+    @Environment(\.uiScale) private var ui
     let label: String
     let value: String
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.title2).monospacedDigit()
+            Text(label).scaledFont(.caption).foregroundStyle(.secondary)
+            Text(value).scaledFont(.title2).monospacedDigit()
         }
     }
 }
 
 struct InfoGrid: View {
+    @Environment(\.uiScale) private var ui
     let rows: [(String, String)]
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 20, verticalSpacing: 5) {
@@ -136,7 +140,7 @@ struct InfoGrid: View {
                 }
             }
         }
-        .font(.callout)
+        .scaledFont(.callout)
     }
 }
 
@@ -146,4 +150,61 @@ struct InfoGrid: View {
 final class Box<Value>: ObservableObject {
     @Published var value: Value
     init(_ value: Value) { self.value = value }
+}
+
+// MARK: - 表示倍率 (ウィンドウの大きさ・⌘+ / ⌘− に合わせて文字やグラフを拡大)
+
+private struct UIScaleKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 1
+}
+
+extension EnvironmentValues {
+    /// 画面全体の表示倍率 (1.0 = 標準)
+    var uiScale: CGFloat {
+        get { self[UIScaleKey.self] }
+        set { self[UIScaleKey.self] = newValue }
+    }
+}
+
+/// macOS の標準文字サイズに倍率を掛けるためのスタイル
+enum UIFontStyle {
+    case largeTitle, title, title2, title3, headline, body, callout, subheadline, footnote, caption, caption2
+
+    var size: CGFloat {
+        switch self {
+        case .largeTitle: return 26
+        case .title: return 22
+        case .title2: return 17
+        case .title3: return 15
+        case .headline, .body: return 13
+        case .callout: return 12
+        case .subheadline: return 11
+        case .footnote, .caption: return 10
+        case .caption2: return 10
+        }
+    }
+    var weight: Font.Weight { self == .headline ? .bold : .regular }
+}
+
+private struct ScaledFont: ViewModifier {
+    @Environment(\.uiScale) private var ui
+    let size: CGFloat
+    let weight: Font.Weight
+    let mono: Bool
+
+    func body(content: Content) -> some View {
+        let font = Font.system(size: size * ui, weight: weight)
+        return content.font(mono ? font.monospacedDigit() : font)
+    }
+}
+
+extension View {
+    /// 表示倍率に合わせて大きさが変わるフォント
+    func scaledFont(_ style: UIFontStyle, mono: Bool = false) -> some View {
+        modifier(ScaledFont(size: style.size, weight: style.weight, mono: mono))
+    }
+
+    func scaledFont(size: CGFloat, weight: Font.Weight = .regular, mono: Bool = false) -> some View {
+        modifier(ScaledFont(size: size, weight: weight, mono: mono))
+    }
 }

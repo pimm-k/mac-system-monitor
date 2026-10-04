@@ -11,6 +11,7 @@ struct UserRow: Identifiable, Hashable {
 
 @MainActor
 struct UsersView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     let search: String
 
@@ -52,11 +53,11 @@ struct UsersView: View {
                 TableColumn("ユーザー", value: \.name) { u in
                     Label(u.name, systemImage: u.id == 0 ? "lock.shield" : "person.crop.circle")
                 }
-                .width(min: 160, ideal: 220)
+                .width(min: 160 * ui, ideal: 220 * ui)
                 TableColumn("UID", value: \.id) { u in Text(String(u.id)).monospacedDigit() }
-                    .width(min: 50, ideal: 60)
+                    .width(min: 50 * ui, ideal: 60 * ui)
                 TableColumn("プロセス数", value: \.count) { u in Text("\(u.count)").monospacedDigit() }
-                    .width(min: 60, ideal: 80)
+                    .width(min: 60 * ui, ideal: 80 * ui)
                 TableColumn("CPU", value: \.cpu) { u in HeatCell(text: Fmt.percent(u.cpu), level: u.cpu / 40) }
                 TableColumn("メモリ", value: \.memory) { u in
                     HeatCell(text: Fmt.bytes(u.memory), level: Double(u.memory) / total * 3)
@@ -65,17 +66,17 @@ struct UsersView: View {
                     HeatCell(text: Fmt.rate(u.disk), level: u.disk / 20_000_000)
                 }
             }
-            .frame(minHeight: 160)
+            .frame(minHeight: 160 * ui)
 
             VStack(alignment: .leading, spacing: 0) {
                 Text(selection.isEmpty ? "ユーザーを選択するとプロセスを表示します" : "選択したユーザーのプロセス (\(procs.count))")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .scaledFont(.callout).foregroundStyle(.secondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                 Table(procs, selection: $procSelectionBox.value, sortOrder: $procSortBox.value) {
                     TableColumn("名前", value: \.name) { p in
                         HStack(spacing: 6) {
                             Image(nsImage: IconCache.shared.icon(path: p.path, bundlePath: p.bundlePath))
-                                .resizable().frame(width: 16, height: 16)
+                                .resizable().frame(width: 16 * ui, height: 16 * ui)
                             Text(p.name).lineLimit(1)
                         }
                     }
@@ -92,7 +93,7 @@ struct UsersView: View {
                     }
                 }
             }
-            .frame(minHeight: 160)
+            .frame(minHeight: 160 * ui)
         }
     }
 

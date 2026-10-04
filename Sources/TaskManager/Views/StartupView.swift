@@ -3,6 +3,7 @@ import AppKit
 
 @MainActor
 struct StartupView: View {
+    @Environment(\.uiScale) private var ui
     @EnvironmentObject private var m: Monitor
     let search: String
 
@@ -45,11 +46,11 @@ struct StartupView: View {
         VStack(spacing: 0) {
             HStack {
                 Text("ログイン時やシステム起動時に自動で実行される LaunchAgents / LaunchDaemons")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .scaledFont(.callout).foregroundStyle(.secondary)
                 Spacer()
                 if loading { ProgressView().controlSize(.small) }
                 Text("\(items.filter { !$0.disabled }.count) 件 有効 / 全 \(items.count) 件")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .scaledFont(.callout).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 14).padding(.vertical, 8)
             Divider()
@@ -58,19 +59,19 @@ struct StartupView: View {
                 TableColumn("名前", value: \.label) { item in
                     HStack(spacing: 6) {
                         Image(nsImage: IconCache.shared.icon(path: item.program, bundlePath: nil))
-                            .resizable().frame(width: 16, height: 16)
+                            .resizable().frame(width: 16 * ui, height: 16 * ui)
                         Text(item.label).lineLimit(1)
                     }
                 }
-                .width(min: 220, ideal: 300)
-                TableColumn("発行元", value: \.publisher).width(min: 70, ideal: 100)
-                TableColumn("種類", value: \.kindName).width(min: 90, ideal: 130)
+                .width(min: 220 * ui, ideal: 300 * ui)
+                TableColumn("発行元", value: \.publisher).width(min: 70 * ui, ideal: 100 * ui)
+                TableColumn("種類", value: \.kindName).width(min: 90 * ui, ideal: 130 * ui)
                 TableColumn("状態", value: \.statusText) { item in
                     Text(item.statusText).foregroundStyle(item.disabled ? Color.secondary : Color.primary)
                 }
-                .width(min: 40, ideal: 50)
-                TableColumn("実行状況", value: \.runningText).width(min: 50, ideal: 60)
-                TableColumn("自動起動", value: \.runAtLoadText).width(min: 50, ideal: 60)
+                .width(min: 40 * ui, ideal: 50 * ui)
+                TableColumn("実行状況", value: \.runningText).width(min: 50 * ui, ideal: 60 * ui)
+                TableColumn("自動起動", value: \.runAtLoadText).width(min: 50 * ui, ideal: 60 * ui)
                 TableColumn("プログラム", value: \.program) { item in
                     Text(item.program).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
                 }
