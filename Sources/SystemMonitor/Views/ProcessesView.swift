@@ -43,6 +43,17 @@ struct ProcessesView: View {
         nonmutating set { expandedBox.value = newValue }
     }
     @StateObject private var confirmForceBox = Box<Bool>(false)
+    /// 右側の詳細パネル
+    @StateObject private var detail = ProcessDetailModel()
+    @StateObject private var showPanelBox = Box<Bool>(UserDefaults.standard.object(forKey: "processDetailPanel") as? Bool ?? true)
+    private var showPanel: Bool {
+        get { showPanelBox.value }
+        nonmutating set {
+            showPanelBox.value = newValue
+            UserDefaults.standard.set(newValue, forKey: "processDetailPanel")
+            if newValue { updateDetail() }
+        }
+    }
     private var confirmForce: Bool {
         get { confirmForceBox.value }
         nonmutating set { confirmForceBox.value = newValue }
@@ -55,6 +66,7 @@ struct ProcessesView: View {
         let diskTitle = L("ディスク  %@%%", "\(Int(m.system.disk.active.rounded()))")
         let total = Double(max(m.system.mem.total, 1))
 
+        HSplitView {
         Table(rows, selection: $selectionBox.value, sortOrder: $sortOrderBox.value) {
             TableColumn(L("名前"), value: \.name) { row in
                 NameCell(row: row, expanded: expanded.contains(row.pid)) { toggle(row.pid) }
@@ -99,6 +111,9 @@ struct ProcessesView: View {
                         NSPasteboard.general.clearContents()
                         NSPasteboard.general.setString(String(first.pid), forType: .string)
                     }
+                    if !showPanel {
+                        Button(L("詳細パネルを表示")) { showPanel = true }
+                    }
                 }
             }
         } primaryAction: { ids in
@@ -110,6 +125,15 @@ struct ProcessesView: View {
         } message: {
             Text(L("保存されていないデータは失われます。"))
         }
+        .frame(minWidth: 420 * ui)
+
+        if showPanel {
+            ProcessDetailPanel(model: detail, isApp: selectedIsApp, onClose: { showPanel = false })
+                .frame(minWidth: 320 * ui, idealWidth: 420 * ui, maxWidth: 680 * ui)
+        }
+        }
+        .onChange(of: selectionBox.value) { updateDetail() }
+        .onAppear { updateDetail() }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button { m.runNewTask() } label: {
@@ -121,8 +145,32 @@ struct ProcessesView: View {
                 }
                 .help(L("タスクを終了する"))
                 .disabled(selectedRows(rows).isEmpty)
+                Button { showPanel.toggle() } label: {
+                    Label(L("詳細パネル"), systemImage: "sidebar.right")
+                }
+                .help(showPanel ? L("詳細パネルを隠す") : L("詳細パネルを表示"))
             }
         }
+    }
+
+    // MARK: - 詳細パネル
+
+    /// 選択中の行 (1 行だけのとき) のプロセス
+    private var selectedPid: pid_t? {
+        guard selection.count == 1, let id = selection.first,
+              id.hasPrefix("p") || id.hasPrefix("c"), let pid = pid_t(id.dropFirst()) else { return nil }
+        return pid
+    }
+
+    private var selectedIsApp: Bool {
+        guard let id = selection.first, id.hasPrefix("p"), let pid = selectedPid else { return false }
+        return m.processes.first { $0.pid == pid }?.isRegularApp ?? false
+    }
+
+    private func updateDetail() {
+        guard showPanel else { return }
+        let pid = selectedPid
+        detail.select(pid.flatMap { p in m.processes.first { $0.pid == p } })
     }
 
     // MARK: - 行の組み立て

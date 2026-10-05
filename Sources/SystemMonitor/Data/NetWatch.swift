@@ -112,8 +112,12 @@ struct NetConn: Hashable {
 
 enum NetConnections {
     /// このユーザーのプロセスのネットワーク接続一覧 (root なしで見える範囲)
-    static func list() -> [NetConn] {
-        let r = Shell.run("/usr/sbin/lsof", ["-nP", "-w", "-i", "-F", "pcfPnT"])
+    /// - Parameter pid: 指定すると、そのプロセスの接続だけを返す
+    static func list(pid: pid_t? = nil) -> [NetConn] {
+        var args = ["-nP", "-w"]
+        if let pid { args += ["-a", "-p", String(pid)] }
+        args += ["-i", "-F", "pcfPnT"]
+        let r = Shell.run("/usr/sbin/lsof", args)
         guard !r.out.isEmpty else { return [] }
         var out: [NetConn] = []
         var pid: pid_t = 0, cmd = ""
