@@ -64,7 +64,12 @@ enum ProcessInspector {
         let signer = certs?.first.flatMap { SecCertificateCopySubjectSummary($0) as String? }
         let flags = (dict[kSecCodeInfoFlags as String] as? NSNumber)?.uint32Value ?? 0
         let adhoc = flags & 0x2 != 0   // kSecCodeSignatureAdhoc
-        let isApple = signer == "Software Signing" || (signer?.hasPrefix("Apple") ?? false)
+        // 証明書の名前ではなく、Apple のルート証明書から発行された署名かどうかで判定する
+        // (名前を似せた自己署名の証明書を Apple と表示しないため)
+        var requirement: SecRequirement?
+        let isApple = status == .valid
+            && SecRequirementCreateWithString("anchor apple" as CFString, [], &requirement) == errSecSuccess
+            && requirement.map { SecStaticCodeCheckValidity(code, SecCSFlags(rawValue: 1 << 2), $0) == errSecSuccess } == true
         return SignatureInfo(valid: status == .valid, unsigned: status == .unsigned, adhoc: adhoc,
                              signer: signer, teamID: team, isApple: isApple)
     }

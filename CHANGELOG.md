@@ -10,6 +10,13 @@
 
 ## [Unreleased]
 
+### セキュリティ
+- 詳細パネルの「✓ 有効（Apple）」の判定を、証明書の名前ではなく Apple のルート証明書（`anchor apple`）で確認するように変更（名前を似せた証明書を Apple と表示しないため）
+
+### 変更
+- GitHub Actions の `actions/checkout` を全ワークフローで v7 にそろえた
+- 構成要素の一覧（docs/security/components.md）に詳細パネル・メモリ解放で使う機能を追加
+
 ## [2.7.0] - 2026-10-05
 
 ### 追加

@@ -20,7 +20,9 @@
 | `URLSession`（HTTPS）/ GitHub REST API / CryptoKit (SHA-256) | `Updater.swift` | 最新リリースの確認と zip のダウンロード・ハッシュ検証 | URLSession, TLS, CryptoKit |
 | `/usr/bin/ditto` / `/usr/bin/codesign --verify` / `/usr/bin/xattr` / `/bin/bash`（生成スクリプト） | `Updater.swift` | 更新ファイルの展開・署名確認・アプリの置き換えと再起動 | ditto, codesign, Gatekeeper |
 | `/usr/sbin/lsof` / Security (`SecStaticCode`) | `NetWatch.swift` | 接続一覧の取得、通信しているプログラムの署名確認 | lsof, Code Signing |
-| UserNotifications | `NetWatch.swift` / `SystemMonitorApp.swift` | 怪しい通信の通知 | UserNotifications |
+| UserNotifications | `NetWatch.swift` / `Updater.swift` / `SystemMonitorApp.swift` | 怪しい通信・アップデートの通知 | UserNotifications |
+| sysctl (`KERN_PROC_PID` / `KERN_PROCARGS2`) / `/usr/sbin/lsof -p` / Security (`SecStaticCode`, `SecCodeCopySigningInformation`, `SecRequirement "anchor apple"`) | `ProcessInspector.swift` | 詳細パネル：起動時刻・引数・開いているファイル・コード署名の表示（読み取りのみ） | sysctl, lsof, Code Signing |
+| `/usr/sbin/purge`（osascript で管理者実行） | `Monitor.swift` | メモリの解放（ディスク キャッシュの破棄） | purge, privilege escalation |
 
 ## 2. ビルド・配布
 
@@ -35,7 +37,7 @@
 
 | アクション / ランナー | ワークフロー |
 |---|---|
-| `actions/checkout@v4` | ci / release / codeql / secrets |
+| `actions/checkout@v7` | ci / release / codeql / secrets |
 | `github/codeql-action/*@v3` | codeql |
 | `ghcr.io/gitleaks/gitleaks:latest`（Docker イメージ） | secrets |
 | `macos-15` ランナー | ci / release / codeql |
