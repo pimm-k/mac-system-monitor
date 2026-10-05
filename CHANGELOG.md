@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-10-05
+
 ### 追加
 - **プロセスの詳細パネル**：プロセス タブで行を選ぶと、右側に詳細を表示（ツールバーの「詳細パネル」で表示 / 非表示）
   - 概要：パス・引数・親プロセス・起動時刻と実行時間・優先度・スレッド・CPU 時間・子プロセス、CPU / メモリ / ディスクの小さいグラフ
@@ -198,7 +200,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...v2.4.2
