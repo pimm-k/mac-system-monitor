@@ -54,6 +54,8 @@ struct AlertInfo: Identifiable {
     let title: String
     let message: String
     var adminCommand: String? = nil
+    /// 「管理者として実行」を押したときの処理 (指定がなければ adminCommand をそのまま実行)
+    var onConfirm: (() -> Void)? = nil
 }
 
 /// 全データの取りまとめ役。UI から参照される。
@@ -123,6 +125,8 @@ final class Monitor: ObservableObject {
     @Published var focusPid: pid_t? = nil
     @Published var speed: UpdateSpeed = .normal
     @Published var alert: AlertInfo? = nil
+    /// メモリ解放の実行中
+    @Published private(set) var purging = false
     @Published var alwaysOnTop = false {
         didSet {
             for w in NSApp.windows { w.level = alwaysOnTop ? .floating : .normal }
@@ -351,6 +355,51 @@ final class Monitor: ObservableObject {
             DispatchQueue.main.async { self.tab = .history }
         } else {
             tab = .history
+        }
+    }
+
+    // MARK: メモリの解放
+
+    static let purgeCommand = "/usr/sbin/purge"
+
+    /// メモリ解放の確認を出す (管理者パスワードが必要)
+    func confirmPurgeMemory() {
+        alert = AlertInfo(
+            title: L("メモリを解放しますか？"),
+            message: L("ディスクのキャッシュ（キャッシュされたファイル）を消して、利用可能なメモリを増やします。macOS は必要に応じて自動でメモリを管理しているため効果は一時的で、直後はアプリやファイルの読み込みが少し遅くなることがあります。"),
+            adminCommand: Self.purgeCommand,
+            onConfirm: { [weak self] in self?.purgeMemory() })
+    }
+
+    /// purge を管理者権限で実行し、前後の利用可能メモリを比べて結果を表示する
+    func purgeMemory() {
+        guard !purging else { return }
+        purging = true
+        let before = system.mem
+        let script = "do shell script \"\(Self.purgeCommand)\" with administrator privileges"
+        Task.detached(priority: .userInitiated) {
+            let r = Shell.run("/usr/bin/osascript", ["-e", script])
+            var after = before
+            if r.status == 0 {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                after = SystemSampler().sample().mem
+            }
+            await MainActor.run {
+                self.purging = false
+                if r.status != 0 {
+                    // -128 = パスワード入力をキャンセル
+                    if !r.err.contains("-128") {
+                        self.alert = AlertInfo(title: L("実行に失敗しました"), message: r.err)
+                    }
+                    return
+                }
+                let gained = after.available > before.available ? after.available - before.available : 0
+                self.alert = AlertInfo(
+                    title: L("メモリを解放しました"),
+                    message: L("利用可能: %@ → %@（約 %@ 増加）\nキャッシュされたファイル: %@ → %@",
+                               Fmt.bytes(before.available), Fmt.bytes(after.available), Fmt.bytes(gained),
+                               Fmt.bytes(before.cached), Fmt.bytes(after.cached)))
+            }
         }
     }
 

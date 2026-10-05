@@ -104,7 +104,9 @@ struct ContentView: View {
                isPresented: Binding(get: { m.alert != nil }, set: { if !$0 { m.alert = nil } }),
                presenting: m.alert) { info in
             if let cmd = info.adminCommand {
-                Button(L("管理者として実行")) { m.runAsAdmin(cmd) }
+                Button(L("管理者として実行")) {
+                    if let action = info.onConfirm { action() } else { m.runAsAdmin(cmd) }
+                }
                 Button(L("キャンセル"), role: .cancel) {}
             } else {
                 Button("OK", role: .cancel) {}
