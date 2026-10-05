@@ -31,14 +31,15 @@ if [ "$WATCH_ONLY" -eq 0 ]; then
   fi
 fi
 
-# PR を作った直後は GitHub にチェックがまだ登録されていないことがあるので、出てくるまで待つ (最大 2 分)
+# push した直後は、新しいコミットのチェックが GitHub にまだ登録されていない
+# (前のコミットのチェックが見えることもある)。今のコミットのチェックが出てくるまで待つ (最大 2 分)
+HEAD_SHA=$(git rev-parse HEAD)
 for _ in $(seq 1 24); do
-  if gh pr checks "$BRANCH" 2>&1 | grep -q "no checks reported"; then
-    sleep 5
-  else
-    break
-  fi
+  COUNT=$(gh api "repos/{owner}/{repo}/commits/$HEAD_SHA/check-runs" --jq .total_count 2>/dev/null || echo 0)
+  [ "${COUNT:-0}" -gt 0 ] && break
+  sleep 5
 done
+sleep 3   # 同時に始まるほかのチェックも登録されるのを少し待つ
 
 echo "⏳ チェックの完了を待っています…"
 if gh pr checks "$BRANCH" --watch --interval 10 --fail-fast; then
