@@ -46,19 +46,40 @@ final class Updater: ObservableObject {
 
     var current: String { AppVersion.short ?? "0.0.0" }
 
-    /// 起動時の自動確認 (1 日 1 回まで)
-    func checkOnLaunch() {
-        guard autoCheck, AppVersion.short != nil else { return }
-        let last = UserDefaults.standard.double(forKey: Keys.lastCheck)
-        guard Date().timeIntervalSince1970 - last > 24 * 3600 else { return }
-        Task { await check(userInitiated: false) }
+    /// 自動確認の間隔 (アプリを開いている間も、この間隔で確認する)
+    static let autoCheckInterval: TimeInterval = 3600
+
+    /// 自動確認のループ。起動時に 1 回、その後はアプリを開いている間 1 時間ごとに確認する。
+    /// 起動時に見つかったらお知らせ画面を出し、開いている間に見つかったときは
+    /// 画面を邪魔しないようツールバーとサイドバーのボタンだけで知らせる
+    func runAutoCheck() async {
+        var firstRun = true
+        while !Task.isCancelled {
+            if autoCheck, AppVersion.short != nil {
+                let last = UserDefaults.standard.double(forKey: Keys.lastCheck)
+                if Date().timeIntervalSince1970 - last >= Self.autoCheckInterval - 60 {
+                    await check(userInitiated: false, presentSheet: firstRun)
+                }
+            }
+            firstRun = false
+            try? await Task.sleep(nanoseconds: UInt64(Self.autoCheckInterval * 1_000_000_000))
+        }
+    }
+
+    /// 新しいバージョンがあるか
+    var availableRelease: Release? {
+        switch state {
+        case .available(let r), .downloading(let r): return r
+        default: return nil
+        }
     }
 
     /// 新しいバージョンがあるか確認する
-    func check(userInitiated: Bool) async {
+    func check(userInitiated: Bool, presentSheet: Bool = true) async {
         if case .downloading = state { return }
         if state == .installing { return }
-        state = .checking
+        // 自動確認で見つかって表示中のものは、確認中の表示に戻さない
+        if userInitiated || availableRelease == nil { state = .checking }
         if userInitiated { showSheet = true }
         do {
             let rel = try await Self.fetchLatest()
@@ -66,12 +87,13 @@ final class Updater: ObservableObject {
             if Self.isNewer(rel.version, than: current) {
                 state = .available(rel)
                 let skipped = UserDefaults.standard.string(forKey: Keys.skipped)
-                if userInitiated || skipped != rel.version { showSheet = true }
+                if userInitiated || (presentSheet && skipped != rel.version) { showSheet = true }
             } else {
                 state = .upToDate
             }
         } catch {
-            state = userInitiated ? .failed(error.localizedDescription) : .idle
+            if userInitiated { state = .failed(error.localizedDescription) }
+            else if availableRelease == nil { state = .idle }
         }
     }
 
@@ -118,12 +140,23 @@ final class Updater: ObservableObject {
         init(_ m: String) { message = m }
     }
 
+    /// キャッシュを使わない通信 (アップデート確認用)
+    nonisolated private static let noCacheSession: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.urlCache = nil
+        c.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        return URLSession(configuration: c)
+    }()
+
     private static func fetchLatest() async throws -> Release {
         var req = URLRequest(url: URL(string: "https://api.github.com/repos/\(repo)/releases/latest")!)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.setValue("SystemMonitor-Updater", forHTTPHeaderField: "User-Agent")
         req.timeoutInterval = 15
-        let (data, resp) = try await URLSession.shared.data(for: req)
+        // GitHub API の応答は 60 秒キャッシュされるため、毎回サーバーに問い合わせる
+        // (キャッシュされた古い「最新版」の情報で「最新です」と判定されないように)
+        req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        let (data, resp) = try await Self.noCacheSession.data(for: req)
         guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
             throw UpdateError(L("GitHub から最新版の情報を取得できませんでした。"))
         }

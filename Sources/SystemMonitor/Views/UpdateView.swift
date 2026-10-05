@@ -80,6 +80,9 @@ struct UpdateSheet: View {
                 NSWorkspace.shared.open(URL(string: "https://github.com/\(Updater.repo)/releases/latest")!)
             }
             Button(L("閉じる")) { dismiss() }.keyboardShortcut(.defaultAction)
+        case .upToDate:
+            Button(L("もう一度確認")) { Task { await u.check(userInitiated: true) } }
+            Button(L("閉じる")) { dismiss() }.keyboardShortcut(.defaultAction)
         default:
             Button(L("閉じる")) { dismiss() }.keyboardShortcut(.defaultAction)
         }

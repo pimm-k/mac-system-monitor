@@ -16,7 +16,7 @@ struct ContentView: View {
             mainView(scale: m.uiScale(forWidth: geo.size.width))
         }
         .task { await m.run() }
-        .task { if AppLanguage.hasChosen { updater.checkOnLaunch() } }
+        .task { if AppLanguage.hasChosen { await updater.runAutoCheck() } }
         .sheet(isPresented: $firstRunBox.value) {
             LanguageWelcomeSheet { lang in
                 firstRunBox.value = false
@@ -63,6 +63,18 @@ struct ContentView: View {
         }
         .searchable(text: $searchBox.value, placement: .toolbar, prompt: L("名前・PID・ユーザーで検索"))
         .toolbar {
+            if let rel = updater.availableRelease {
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        updater.showSheet = true
+                    } label: {
+                        Label(L("v%@ にアップデート", "\(rel.version)"), systemImage: "arrow.down.circle.fill")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .tint(.accentColor)
+                    .help(L("新しいバージョン v%@ があります", "\(rel.version)"))
+                }
+            }
             ToolbarItem(placement: .automatic) {
                 // メニューを開いている間に毎秒の更新で作り直されないよう、
                 // 設定値が変わったときだけ再描画する別ビューにしている
