@@ -4,6 +4,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var m: Monitor
     @EnvironmentObject private var updater: Updater
+    @StateObject private var firstRunBox = Box<Bool>(!AppLanguage.hasChosen)
     @StateObject private var searchBox = Box<String>("")
     private var search: String {
         get { searchBox.value }
@@ -15,7 +16,14 @@ struct ContentView: View {
             mainView(scale: m.uiScale(forWidth: geo.size.width))
         }
         .task { await m.run() }
-        .task { updater.checkOnLaunch() }
+        .task { if AppLanguage.hasChosen { updater.checkOnLaunch() } }
+        .sheet(isPresented: $firstRunBox.value) {
+            LanguageWelcomeSheet { lang in
+                firstRunBox.value = false
+                AppLanguage.chooseOnFirstRun(lang)
+            }
+            .interactiveDismissDisabled()
+        }
         .onReceive(NotificationCenter.default.publisher(for: Notifier.openNetAlerts)) { _ in
             m.openNetworkAlerts()
         }
@@ -220,3 +228,47 @@ private struct OptionsMenu: View, Equatable {
         .help(L("更新速度・表示サイズ・言語・アップデートなどの設定"))
     }
 }
+
+/// 初回起動時の言語選択 (日本語と英語を併記。初期値は日本語)
+@MainActor
+private struct LanguageWelcomeSheet: View {
+    let onDone: (AppLanguage) -> Void
+    @StateObject private var choiceBox = Box<AppLanguage>(AppLanguage.current)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable().frame(width: 56, height: 56)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: "システムモニターへようこそ").font(.title2.bold())
+                    Text(verbatim: "Welcome to System Monitor").foregroundStyle(.secondary)
+                }
+            }
+            Text(verbatim: "表示する言語を選んでください。\nChoose the display language.")
+            Picker(selection: $choiceBox.value) {
+                Text(verbatim: "日本語").tag(AppLanguage.ja)
+                Text(verbatim: "English").tag(AppLanguage.en)
+                Text(verbatim: "システムの設定に従う / Use System Setting").tag(AppLanguage.system)
+            } label: {
+                EmptyView()
+            }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
+            Text(verbatim: "あとから「オプション → 言語 / Language」で変更できます。\nYou can change it later in Options → 言語 / Language.")
+                .font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Spacer()
+                Button {
+                    onDone(choiceBox.value)
+                } label: {
+                    Text(verbatim: "OK").frame(minWidth: 60)
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 440)
+    }
+}
+
