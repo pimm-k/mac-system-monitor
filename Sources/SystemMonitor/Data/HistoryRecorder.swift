@@ -208,6 +208,8 @@ enum HeadlessRecorder {
         while true {
             autoreleasepool {
                 recorder.tick()
+                // アプリを閉じている間もアップデートを確認して通知する
+                UpdateNotifier.backgroundCheckIfDue()
             }
             Thread.sleep(forTimeInterval: HistoryRecorder.interval)
         }

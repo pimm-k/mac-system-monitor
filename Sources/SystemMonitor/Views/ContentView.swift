@@ -27,6 +27,10 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: Notifier.openNetAlerts)) { _ in
             m.openNetworkAlerts()
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notifier.openUpdate)) { _ in
+            NSApp.activate(ignoringOtherApps: true)
+            Task { await updater.check(userInitiated: true) }
+        }
         .sheet(isPresented: $updater.showSheet) {
             UpdateSheet().environmentObject(updater)
         }
@@ -231,7 +235,7 @@ private struct OptionsMenu: View, Equatable {
 
             Section(L("アップデート")) {
                 Button(L("アップデートを確認…")) { actions.checkUpdate() }
-                Toggle(L("起動時にアップデートを確認"), isOn: Binding(get: { autoCheck }, set: actions.setAutoCheck))
+                Toggle(L("アップデートを自動で確認・通知"), isOn: Binding(get: { autoCheck }, set: actions.setAutoCheck))
             }
         } label: {
             // アイコン (…) だけだと分かりにくいので文字で表示する

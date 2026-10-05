@@ -284,8 +284,6 @@
 "起動" = "Started";
 "起動ディスク" = "Startup Disk";
 "起動・終了ログ" = "Start/Exit Log";
-"起動時にアップデートを確認" = "Check for Updates at Launch";
-"起動時に確認する" = "Check at launch";
 "送信" = "Send";
 "送信 %@ が %@ 秒以上続いています" = "Upload of %@ has continued for over %@ seconds";
 "送信 (破線)" = "Send (dashed)";
@@ -312,3 +310,7 @@
 "アップデート" = "Updates";
 "v%@ にアップデート" = "Update to v%@";
 "もう一度確認" = "Check Again";
+"アップデートを自動で確認・通知" = "Automatically Check for Updates and Notify";
+"自動で確認して通知する" = "Check automatically and notify";
+"アップデートがあります" = "Update available";
+"システムモニター v%@ が利用できます。クリックするとアップデート画面を開きます。" = "System Monitor v%@ is available. Click to open the update window.";
