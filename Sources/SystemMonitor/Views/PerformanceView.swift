@@ -272,7 +272,19 @@ struct PerformanceView: View {
                 .frame(height: 260 * ui)
             bottomAxis
 
-            Text(L("メモリの構成")).scaledFont(.caption).foregroundStyle(.secondary).padding(.top, 6)
+            HStack {
+                Text(L("メモリの構成")).scaledFont(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if m.purging { ProgressView().controlSize(.small) }
+                Button {
+                    m.confirmPurgeMemory()
+                } label: {
+                    Label(L("メモリを解放…"), systemImage: "memorychip")
+                }
+                .disabled(m.purging)
+                .help(L("ディスクのキャッシュを消して利用可能なメモリを増やします（管理者パスワードが必要）"))
+            }
+            .padding(.top, 6)
             MemoryBar(mem: mem).frame(height: 36 * ui)
 
             HStack(alignment: .top, spacing: 48) {

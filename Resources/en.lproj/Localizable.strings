@@ -314,3 +314,9 @@
 "自動で確認して通知する" = "Check automatically and notify";
 "アップデートがあります" = "Update available";
 "システムモニター v%@ が利用できます。クリックするとアップデート画面を開きます。" = "System Monitor v%@ is available. Click to open the update window.";
+"メモリを解放しますか？" = "Free up memory?";
+"ディスクのキャッシュ（キャッシュされたファイル）を消して、利用可能なメモリを増やします。macOS は必要に応じて自動でメモリを管理しているため効果は一時的で、直後はアプリやファイルの読み込みが少し遅くなることがあります。" = "This clears the disk cache (cached files) to increase available memory. macOS manages memory automatically as needed, so the effect is temporary, and apps and files may load a little more slowly right afterwards.";
+"メモリを解放しました" = "Memory freed";
+"利用可能: %@ → %@（約 %@ 増加）\nキャッシュされたファイル: %@ → %@" = "Available: %@ → %@ (about %@ more)\nCached files: %@ → %@";
+"メモリを解放…" = "Free Up Memory…";
+"ディスクのキャッシュを消して利用可能なメモリを増やします（管理者パスワードが必要）" = "Clears the disk cache to increase available memory (administrator password required)";
