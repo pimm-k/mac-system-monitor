@@ -3,7 +3,7 @@
 #
 #   git pr            push → PR が無ければ作成 → チェック完了まで待つ
 #   git pr -m         上に加えて、全チェック成功ならスカッシュマージ → main に戻って pull
-#   git pr -w         チェック待ちだけ (gh pr checks --watch と同じ)
+#   git pr -w         チェック待ちだけ (push・マージはしない)
 #
 # (git pr は ./scripts/setup-hooks.sh 実行後に使えます。直接 ./scripts/pr.sh でも可)
 set -euo pipefail
@@ -31,23 +31,45 @@ if [ "$WATCH_ONLY" -eq 0 ]; then
   fi
 fi
 
-# push した直後は、新しいコミットのチェックが GitHub にまだ登録されていない
-# (前のコミットのチェックが見えることもある)。今のコミットのチェックが出てくるまで待つ (最大 2 分)
+# このコミットの GitHub Actions (CI / CodeQL / Secrets) がすべて終わるまで待つ。
+# ※ gh pr checks は、macOS の実行環境を待っている (まだ始まっていない) チェックを数えないことがあり、
+#   先に終わったチェックだけを見て「すべて成功」と判定してしまうため、ワークフローの実行単位で確認する。
 HEAD_SHA=$(git rev-parse HEAD)
+echo "⏳ チェックの完了を待っています… (${HEAD_SHA:0:7})"
+runs() { gh run list --commit "$HEAD_SHA" --limit 50 "$@" 2>/dev/null; }
+
+# 実行が登録されるまで待つ (最大 2 分)
 for _ in $(seq 1 24); do
-  COUNT=$(gh api "repos/{owner}/{repo}/commits/$HEAD_SHA/check-runs" --jq .total_count 2>/dev/null || echo 0)
-  [ "${COUNT:-0}" -gt 0 ] && break
+  N=$(runs --json databaseId --jq 'length' || echo 0)
+  [ "${N:-0}" -gt 0 ] && break
   sleep 5
 done
-sleep 3   # 同時に始まるほかのチェックも登録されるのを少し待つ
+if [ "${N:-0}" -eq 0 ]; then
+  echo "❌ このコミットのチェックが見つかりません: gh pr checks $BRANCH"
+  exit 1
+fi
+sleep 10   # 同時に始まるほかのワークフローも登録されるのを待つ
 
-echo "⏳ チェックの完了を待っています…"
-if gh pr checks "$BRANCH" --watch --interval 10 --fail-fast; then
-  echo "✅ すべてのチェックが成功しました"
-else
+# すべて終わるまで待つ (最大 40 分)
+LAST=""
+for _ in $(seq 1 160); do
+  STATUS=$(runs --json name,status,conclusion --jq 'sort_by(.name)[] | "  \(.name): \(if .status == "completed" then .conclusion else .status end)"' || true)
+  if [ "$STATUS" != "$LAST" ]; then echo "$STATUS"; echo "  ---"; LAST="$STATUS"; fi
+  PENDING=$(runs --json status --jq '[.[] | select(.status != "completed")] | length' || echo 1)
+  [ "${PENDING:-1}" -eq 0 ] && break
+  sleep 15
+done
+
+FAILED=$(runs --json conclusion --jq '[.[] | select(.conclusion != "success" and .conclusion != "skipped" and .conclusion != "neutral")] | length' || echo 1)
+PENDING=$(runs --json status --jq '[.[] | select(.status != "completed")] | length' || echo 1)
+if [ "${PENDING:-1}" -ne 0 ]; then
+  echo "❌ 時間内にチェックが終わりませんでした: gh pr checks $BRANCH"
+  exit 1
+elif [ "${FAILED:-1}" -ne 0 ]; then
   echo "❌ 失敗したチェックがあります: gh pr checks $BRANCH"
   exit 1
 fi
+echo "✅ すべてのチェックが成功しました"
 
 if [ "$MERGE" -eq 1 ]; then
   gh pr merge "$BRANCH" --squash --delete-branch
