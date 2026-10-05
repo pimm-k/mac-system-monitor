@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-10-05
+
 ### 変更
 - 表示言語の初期値を「システムの設定に従う」に変更（v2.4.0 では日本語）。初回の言語選択画面でも最初に選ばれているのは「システムの設定に従う」
 - 言語選択画面は新しくインストールしたときだけ表示し、アップデート（以前から使っている場合）では表示しないように
@@ -163,7 +165,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...HEAD
+[2.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...v2.4.0
 [2.3.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...v2.3.1
