@@ -29,8 +29,16 @@ if [ "$WATCH_ONLY" -eq 0 ]; then
   if ! gh pr view "$BRANCH" >/dev/null 2>&1; then
     gh pr create --fill --base main
   fi
-  sleep 5   # チェックが登録されるのを待つ
 fi
+
+# PR を作った直後は GitHub にチェックがまだ登録されていないことがあるので、出てくるまで待つ (最大 2 分)
+for _ in $(seq 1 24); do
+  if gh pr checks "$BRANCH" 2>&1 | grep -q "no checks reported"; then
+    sleep 5
+  else
+    break
+  fi
+done
 
 echo "⏳ チェックの完了を待っています…"
 if gh pr checks "$BRANCH" --watch --interval 10 --fail-fast; then
