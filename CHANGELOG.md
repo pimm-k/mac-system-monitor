@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-10-05
+
 ### 追加
 - **メモリの解放**：パフォーマンス → メモリの「メモリを解放…」で、ディスクのキャッシュを消して利用可能なメモリを増やせるように（macOS 標準の `purge` を管理者権限で実行。実行前に確認を表示し、前後の利用可能メモリを結果に表示）
 
@@ -188,7 +190,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...v2.4.1
