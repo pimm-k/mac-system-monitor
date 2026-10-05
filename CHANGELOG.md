@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-10-05
+
 ### 追加
 - 初めて起動したときに表示言語（日本語 / English / システムの設定に従う）を選ぶ画面を表示（初期値は日本語）
 - インストーラー (.dmg) の「はじめにお読みください」に表示言語の説明と英語の案内を追加
@@ -157,7 +159,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...v2.4.0
 [2.3.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...v2.3.0
