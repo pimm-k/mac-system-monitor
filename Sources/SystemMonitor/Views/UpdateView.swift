@@ -20,7 +20,7 @@ struct UpdateSheet: View {
             }
             content
             HStack {
-                Toggle(L("起動時に確認する"), isOn: $u.autoCheck)
+                Toggle(L("自動で確認して通知する"), isOn: $u.autoCheck)
                     .toggleStyle(.checkbox)
                     .font(.caption)
                 Spacer()

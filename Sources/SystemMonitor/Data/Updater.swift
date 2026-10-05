@@ -88,6 +88,8 @@ final class Updater: ObservableObject {
                 state = .available(rel)
                 let skipped = UserDefaults.standard.string(forKey: Keys.skipped)
                 if userInitiated || (presentSheet && skipped != rel.version) { showSheet = true }
+                // 自動確認で見つけたときは通知センターにも知らせる (同じバージョンは 1 回だけ)
+                if !userInitiated { UpdateNotifier.notifyIfNeeded(version: rel.version) }
             } else {
                 state = .upToDate
             }
@@ -148,7 +150,7 @@ final class Updater: ObservableObject {
         return URLSession(configuration: c)
     }()
 
-    private static func fetchLatest() async throws -> Release {
+    nonisolated static func fetchLatest() async throws -> Release {
         var req = URLRequest(url: URL(string: "https://api.github.com/repos/\(repo)/releases/latest")!)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.setValue("SystemMonitor-Updater", forHTTPHeaderField: "User-Agent")
@@ -298,3 +300,46 @@ final class Updater: ObservableObject {
         try p.run()
     }
 }
+
+// MARK: - アップデートの通知
+
+/// 新しいバージョンを通知センターで知らせる。
+/// アプリを開いている間はアプリが、閉じている間はバックグラウンド記録のエージェントが確認する。
+enum UpdateNotifier {
+    private static let autoCheckKey = "updateAutoCheck"
+    private static let skippedKey = "updateSkippedVersion"
+    private static let notifiedKey = "updateNotifiedVersion"
+    private static let agentLastCheckKey = "updateAgentLastCheck"
+    /// エージェントが確認する間隔 (秒)
+    static let agentInterval: TimeInterval = 6 * 3600
+
+    /// 「自動で確認して通知する」がオンか (アプリの設定と共通)
+    static var enabled: Bool {
+        UserDefaults.standard.object(forKey: autoCheckKey) as? Bool ?? true
+    }
+
+    /// まだ通知していないバージョンなら通知する
+    static func notifyIfNeeded(version: String) {
+        let d = UserDefaults.standard
+        guard enabled, d.string(forKey: notifiedKey) != version, d.string(forKey: skippedKey) != version else { return }
+        d.set(version, forKey: notifiedKey)
+        Notifier.post(title: L("アップデートがあります"),
+                      body: L("システムモニター v%@ が利用できます。クリックするとアップデート画面を開きます。", version),
+                      id: "update-\(version)", kind: "update")
+    }
+
+    /// バックグラウンド エージェントから定期的に呼ぶ (6 時間ごとに確認。通信は別スレッドで行う)
+    static func backgroundCheckIfDue() {
+        let d = UserDefaults.standard
+        let now = Date().timeIntervalSince1970
+        guard enabled, let current = AppVersion.short,
+              now - d.double(forKey: agentLastCheckKey) >= agentInterval else { return }
+        d.set(now, forKey: agentLastCheckKey)
+        Task.detached(priority: .background) {
+            guard let rel = try? await Updater.fetchLatest(),
+                  Updater.isNewer(rel.version, than: current) else { return }
+            notifyIfNeeded(version: rel.version)
+        }
+    }
+}
+

@@ -10,7 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // 怪しい通信の通知
         if Notifier.available {
             UNUserNotificationCenter.current().delegate = self
-            if NetAlertSettings.enabled { Notifier.requestAuthorization() }
+            // 怪しい通信・アップデートの通知に使う
+            Notifier.requestAuthorization()
         }
     }
 
@@ -20,10 +21,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .sound, .list])
     }
 
-    /// 通知をクリックしたら「履歴 → 通信の警告」を開く
+    /// 通知をクリックしたら、その内容の画面 (アップデート / 履歴 → 通信の警告) を開く
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.notification.request.content.userInfo["kind"] as? String == "netAlert" {
+        let kind = response.notification.request.content.userInfo["kind"] as? String
+        if kind == "update" {
+            // アップデートの通知 → アップデート画面を開く
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                NotificationCenter.default.post(name: Notifier.openUpdate, object: nil)
+            }
+        } else if kind == "netAlert" {
             UserDefaults.standard.set(HistorySection.network.rawValue, forKey: "historySection")
             UserDefaults.standard.set(Tab.history.rawValue, forKey: "lastTab")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

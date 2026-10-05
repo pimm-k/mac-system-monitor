@@ -320,6 +320,7 @@ final class NetWatch {
 
 enum Notifier {
     static let openNetAlerts = Notification.Name("SystemMonitor.openNetAlerts")
+    static let openUpdate = Notification.Name("SystemMonitor.openUpdate")
 
     /// .app として起動しているときだけ通知を使える (swift run では使えない)
     static var available: Bool {
@@ -331,13 +332,14 @@ enum Notifier {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    static func post(title: String, body: String, id: String) {
+    /// - Parameter kind: クリックされたときに開く画面 ("netAlert" / "update")
+    static func post(title: String, body: String, id: String, kind: String = "netAlert") {
         guard available else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
-        content.userInfo = ["kind": "netAlert"]
+        content.userInfo = ["kind": kind]
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
     }
 }
