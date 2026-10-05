@@ -310,3 +310,5 @@
 "更新速度・表示サイズ・言語・アップデートなどの設定" = "Settings for update speed, display size, language, updates, and more";
 "表示サイズ" = "Display Size";
 "アップデート" = "Updates";
+"v%@ にアップデート" = "Update to v%@";
+"もう一度確認" = "Check Again";
