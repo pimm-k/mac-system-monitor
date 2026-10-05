@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-10-05
+
 ### 修正
 - 「オプション」メニューで、サブメニューへカーソルを動かすと閉じてしまい操作しづらかった問題を修正
   - 更新速度・言語の選択肢をサブメニューにせず、メニュー内に直接並べるように
@@ -148,7 +150,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...HEAD
+[2.3.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...v2.3.2
 [2.3.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.1.0...v2.2.0
