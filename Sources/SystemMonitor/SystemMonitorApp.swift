@@ -42,13 +42,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 enum Entry {
     @MainActor
     static func main() {
-        // 言語が未設定なら日本語にする (文字列を読み込む前に行う)
-        AppLanguage.applyDefaultIfNeeded()
         if CommandLine.arguments.contains(HeadlessRecorder.flag) {
             HeadlessRecorder.run()
         } else {
             // 旧名「TaskManager」からの設定・履歴・バックグラウンド記録の引き継ぎ (初回のみ)
             LegacyMigration.runIfNeeded()
+            // 言語選択は新規インストール時だけ (アップデート時は出さない)
+            AppLanguage.prepareFirstRun()
             SystemMonitorApp.main()
         }
     }

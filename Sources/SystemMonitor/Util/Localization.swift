@@ -44,9 +44,9 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     private static let choiceKey = "appLanguage"
     private static let chosenKey = "languageChosen"
 
-    /// 今の設定 (未設定なら日本語)
+    /// 今の設定 (未設定ならシステムの設定に従う)
     static var current: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: choiceKey) ?? "") ?? .ja
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: choiceKey) ?? "") ?? .system
     }
 
     /// 初回起動の言語選択を済ませたか
@@ -55,12 +55,21 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         set { UserDefaults.standard.set(newValue, forKey: chosenKey) }
     }
 
-    /// 起動直後 (画面を出す前) に呼ぶ。言語が未設定なら日本語にする
-    static func applyDefaultIfNeeded() {
+    /// 起動直後 (画面を出す前) に呼ぶ。
+    /// 新しくインストールしたときだけ言語選択を出し、アップデート (以前から使っている) のときは出さない
+    static func prepareFirstRun() {
+        guard !hasChosen else { return }
+        if isExistingInstall { hasChosen = true }
+    }
+
+    /// 以前にこのアプリを使ったことがあるか (設定や履歴データが残っているか)
+    private static var isExistingInstall: Bool {
         let d = UserDefaults.standard
-        guard d.string(forKey: choiceKey) == nil else { return }
-        d.set(AppLanguage.ja.rawValue, forKey: choiceKey)
-        d.set([AppLanguage.ja.rawValue], forKey: key)
+        // migratedFromTaskManager は新規インストールでも書かれるので判定に使わない
+        let keys = ["lastTab", "lastPerformanceItem", "cpuGraphMode", "uiZoom", "uiAutoScale",
+                    "updateLastCheck", "historySection", choiceKey]
+        if keys.contains(where: { d.object(forKey: $0) != nil }) { return true }
+        return FileManager.default.fileExists(atPath: HistoryPaths.database.path)
     }
 
     /// 設定を保存する (再起動はしない)

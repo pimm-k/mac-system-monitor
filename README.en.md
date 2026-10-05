@@ -38,7 +38,7 @@
 - Switch tabs (⌘1–⌘6), search, change update speed, always on top
 - Actions on other users' (e.g. root) processes run with your administrator password after confirmation
 - **Suspicious network alerts**: Notification Center alerts for connections to suspicious ports (remote control, Tor, mining, etc.), connections from programs in /tmp or Downloads, connections from unsigned or broken-signature programs, and sustained heavy uploads (see History → Network Alerts for the list and exclusions)
-- **English / Japanese**: choose the display language on first launch (default: Japanese). You can change it later in "Options → 言語 / Language" (Japanese / English / Use System Setting; takes effect after restart)
+- **English / Japanese**: choose the display language on first launch (default: Use System Setting; not shown when updating). You can change it later in "Options → 言語 / Language" (Japanese / English / Use System Setting; takes effect after restart)
 - **In-app updates**: checks for new versions at launch (once a day) or via "System Monitor → Check for Updates…", and updates with one click (hash, signature, etc. are verified before replacing the app)
 
 ## Requirements

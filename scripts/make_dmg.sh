@@ -44,7 +44,7 @@ cat > "$STAGE/はじめにお読みください.txt" <<TXT
   3. 履歴データも消す場合: ~/Library/Application Support/SystemMonitor を削除
 
 ■ 表示言語
-  初めて起動したときに、日本語 / English を選べます（初期値は日本語）。
+  初めて起動したときに、システムの設定に従う / 日本語 / English を選べます（初期値はシステムの設定に従う）。
   あとから「オプション → 言語 / Language」でも変更できます。
 
 詳しくは https://github.com/pimm-k/mac-system-monitor
@@ -55,7 +55,7 @@ System Monitor for Mac v${VERSION}
 - Install: drag "System Monitor" onto the "Applications" folder.
 - First launch: the app is not notarized, so macOS blocks it the first time.
   Open System Settings → Privacy & Security and click "Open Anyway".
-- Language: on first launch you can choose 日本語 or English (default: Japanese).
+- Language: on first launch you can choose Use System Setting, 日本語, or English (default: Use System Setting).
   You can change it later in Options → 言語 / Language.
 - Uninstall: stop background recording on the History tab, move the app to the Trash,
   and delete ~/Library/Application Support/SystemMonitor if you also want to remove history.
