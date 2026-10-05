@@ -10,6 +10,18 @@
 
 ## [Unreleased]
 
+### 修正
+- アップデート（アプリ内・`build_app.sh --install`）の途中で、バックグラウンド記録が入れ替え中のアプリで起動されてしまい「Code Signature Invalid (Launch Constraint Violation)」で強制終了されることがある問題を修正
+  - 入れ替えの前にバックグラウンド記録を止め、入れ替え後に起動し直すように
+  - `build_app.sh --install` でアプリを終了するとき、バックグラウンド記録まで巻き込んで終了させていたのを修正
+
+### セキュリティ
+- 詳細パネルの「✓ 有効（Apple）」の判定を、証明書の名前ではなく Apple のルート証明書（`anchor apple`）で確認するように変更（名前を似せた証明書を Apple と表示しないため）
+
+### 変更
+- GitHub Actions の `actions/checkout` を全ワークフローで v7 にそろえた
+- 構成要素の一覧（docs/security/components.md）に詳細パネル・メモリ解放で使う機能を追加
+
 ## [2.7.0] - 2026-10-05
 
 ### 追加

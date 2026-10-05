@@ -68,12 +68,20 @@ echo "✅ 完了: $(pwd)/$APP  (v$VERSION build $BUILD)"
 
 if [ "$INSTALL" = 1 ]; then
   DEST="/Applications/$APP"
+  AGENT="local.pim.systemmonitor.recorder"
+  AGENT_PLIST="$HOME/Library/LaunchAgents/$AGENT.plist"
   echo "▶ $DEST にインストール中..."
-  # 起動中なら終了させる (起動していないときに quit を送ると逆に起動してしまうので確認してから)
-  if pgrep -f "$DEST/Contents/MacOS/$EXE" >/dev/null 2>&1; then
+  # バックグラウンド記録 (LaunchAgent) を先に止める。
+  # 動かしたままだと、入れ替えの途中で launchd が再起動させ、
+  # 中途半端なアプリが「Code Signature Invalid / Launch Constraint Violation」で強制終了される。
+  if [ -f "$AGENT_PLIST" ]; then
+    launchctl bootout "gui/$(id -u)/$AGENT" >/dev/null 2>&1 || true
+  fi
+  # アプリが起動中なら終了させる (起動していないときに quit を送ると逆に起動してしまうので確認してから)
+  if pgrep -fx "$DEST/Contents/MacOS/$EXE" >/dev/null 2>&1; then
     osascript -e 'tell application id "local.pim.systemmonitor" to quit' >/dev/null 2>&1 || true
     sleep 1
-    pkill -f "$DEST/Contents/MacOS/$EXE" 2>/dev/null || true
+    pkill -fx "$DEST/Contents/MacOS/$EXE" 2>/dev/null || true
   fi
   # 重要: 既存のアプリに上書きコピー (cp -R) すると、署名のキャッシュと中身が食い違い
   #       "Code Signature Invalid" で起動直後に強制終了される。必ず削除してから新規にコピーする。
@@ -90,11 +98,10 @@ if [ "$INSTALL" = 1 ]; then
   fi
   codesign --verify --strict "$DEST"
   echo "✅ インストールしました: $DEST"
-  # バックグラウンド記録 (LaunchAgent) を使っていれば新しいアプリで再起動する
-  AGENT="local.pim.systemmonitor.recorder"
-  if [ -f "$HOME/Library/LaunchAgents/$AGENT.plist" ]; then
-    launchctl kickstart -k "gui/$(id -u)/$AGENT" >/dev/null 2>&1 \
-      || launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/$AGENT.plist" >/dev/null 2>&1 || true
+  # バックグラウンド記録 (LaunchAgent) を使っていれば、入れ替え後のアプリで起動し直す
+  if [ -f "$AGENT_PLIST" ]; then
+    launchctl bootstrap "gui/$(id -u)" "$AGENT_PLIST" >/dev/null 2>&1 \
+      || launchctl kickstart -k "gui/$(id -u)/$AGENT" >/dev/null 2>&1 || true
     echo "▶ バックグラウンド記録を再起動しました"
   fi
   if [ "$OPEN_APP" = 1 ]; then open "$DEST"; fi

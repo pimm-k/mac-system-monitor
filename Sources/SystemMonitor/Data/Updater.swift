@@ -275,6 +275,12 @@ final class Updater: ObservableObject {
         CUR=\(Shell.quote(current.path))
         NEW=\(Shell.quote(newApp.path))
         BAK=\(Shell.quote(backup))
+        AGENT_PLIST="$HOME/Library/LaunchAgents/\(RecorderAgent.label).plist"
+        # 入れ替え中に launchd がバックグラウンド記録を再起動しないよう、先に止める
+        # (途中の状態で起動すると署名エラーで強制終了されるため)
+        if [ -f "$AGENT_PLIST" ]; then
+          /bin/launchctl bootout gui/\(uid)/\(RecorderAgent.label) >/dev/null 2>&1 || true
+        fi
         rm -rf "$BAK"
         if mv "$CUR" "$BAK"; then
           if /usr/bin/ditto "$NEW" "$CUR"; then
@@ -283,8 +289,9 @@ final class Updater: ObservableObject {
             rm -rf "$CUR"; mv "$BAK" "$CUR"   # 失敗したら元に戻す
           fi
         fi
-        if [ -f "$HOME/Library/LaunchAgents/\(RecorderAgent.label).plist" ]; then
-          /bin/launchctl kickstart -k gui/\(uid)/\(RecorderAgent.label) >/dev/null 2>&1 || true
+        if [ -f "$AGENT_PLIST" ]; then
+          /bin/launchctl bootstrap gui/\(uid) "$AGENT_PLIST" >/dev/null 2>&1 \\
+            || /bin/launchctl kickstart -k gui/\(uid)/\(RecorderAgent.label) >/dev/null 2>&1 || true
         fi
         /usr/bin/open "$CUR"
         rm -rf \(Shell.quote(newApp.deletingLastPathComponent().deletingLastPathComponent().path))
