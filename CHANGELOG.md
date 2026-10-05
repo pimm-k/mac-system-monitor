@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-10-05
+
 ### 修正
 - アプリを開いたままだと新しいバージョンが見つからず、一度閉じて開き直さないとアップデートできなかった問題を修正
   - アップデートの確認で GitHub の応答のキャッシュ（60 秒）を使わず、毎回最新の情報を取得するように
@@ -172,7 +174,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...HEAD
+[2.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...v2.4.0
 [2.3.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.1...v2.3.2
