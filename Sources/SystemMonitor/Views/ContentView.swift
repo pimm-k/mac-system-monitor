@@ -229,7 +229,7 @@ private struct OptionsMenu: View, Equatable {
     }
 }
 
-/// 初回起動時の言語選択 (日本語と英語を併記。初期値は日本語)
+/// 初回起動時の言語選択 (日本語と英語を併記。初期値はシステムの設定に従う)
 @MainActor
 private struct LanguageWelcomeSheet: View {
     let onDone: (AppLanguage) -> Void
@@ -247,9 +247,9 @@ private struct LanguageWelcomeSheet: View {
             }
             Text(verbatim: "表示する言語を選んでください。\nChoose the display language.")
             Picker(selection: $choiceBox.value) {
+                Text(verbatim: "システムの設定に従う / Use System Setting").tag(AppLanguage.system)
                 Text(verbatim: "日本語").tag(AppLanguage.ja)
                 Text(verbatim: "English").tag(AppLanguage.en)
-                Text(verbatim: "システムの設定に従う / Use System Setting").tag(AppLanguage.system)
             } label: {
                 EmptyView()
             }
