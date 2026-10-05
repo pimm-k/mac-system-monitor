@@ -42,16 +42,29 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
     private static let key = "AppleLanguages"
     private static let choiceKey = "appLanguage"
+    private static let chosenKey = "languageChosen"
 
-    /// 今の設定
+    /// 今の設定 (未設定なら日本語)
     static var current: AppLanguage {
-        AppLanguage(rawValue: UserDefaults.standard.string(forKey: choiceKey) ?? "") ?? .system
+        AppLanguage(rawValue: UserDefaults.standard.string(forKey: choiceKey) ?? "") ?? .ja
     }
 
-    /// 言語を変更する。反映には再起動が必要なので、確認して再起動する
-    @MainActor
-    static func set(_ lang: AppLanguage) {
-        guard lang != current else { return }
+    /// 初回起動の言語選択を済ませたか
+    static var hasChosen: Bool {
+        get { UserDefaults.standard.bool(forKey: chosenKey) }
+        set { UserDefaults.standard.set(newValue, forKey: chosenKey) }
+    }
+
+    /// 起動直後 (画面を出す前) に呼ぶ。言語が未設定なら日本語にする
+    static func applyDefaultIfNeeded() {
+        let d = UserDefaults.standard
+        guard d.string(forKey: choiceKey) == nil else { return }
+        d.set(AppLanguage.ja.rawValue, forKey: choiceKey)
+        d.set([AppLanguage.ja.rawValue], forKey: key)
+    }
+
+    /// 設定を保存する (再起動はしない)
+    private static func store(_ lang: AppLanguage) {
         let d = UserDefaults.standard
         d.set(lang.rawValue, forKey: choiceKey)
         switch lang {
@@ -63,6 +76,31 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         if RecorderAgent.isInstalled {
             Shell.run("/bin/launchctl", ["kickstart", "-k", "\(RecorderAgent.domain)/\(RecorderAgent.label)"])
         }
+    }
+
+    /// 初回起動の言語選択の結果を反映する。今の表示と違えばすぐ再起動する
+    @MainActor
+    static func chooseOnFirstRun(_ lang: AppLanguage) {
+        hasChosen = true
+        guard lang != current else { return }
+        let wasJapanese = Bundle.main.preferredLocalizations.first?.hasPrefix("ja") ?? true
+        store(lang)
+        let willBeJapanese: Bool = {
+            switch lang {
+            case .ja: return true
+            case .en: return false
+            case .system: return Locale.preferredLanguages.first?.hasPrefix("ja") ?? true
+            }
+        }()
+        if wasJapanese != willBeJapanese { relaunch() }
+    }
+
+    /// 言語を変更する。反映には再起動が必要なので、確認して再起動する
+    @MainActor
+    static func set(_ lang: AppLanguage) {
+        hasChosen = true
+        guard lang != current else { return }
+        store(lang)
 
         let alert = NSAlert()
         alert.messageText = L("表示言語を変更しました")

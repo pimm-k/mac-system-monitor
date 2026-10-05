@@ -42,6 +42,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 enum Entry {
     @MainActor
     static func main() {
+        // 言語が未設定なら日本語にする (文字列を読み込む前に行う)
+        AppLanguage.applyDefaultIfNeeded()
         if CommandLine.arguments.contains(HeadlessRecorder.flag) {
             HeadlessRecorder.run()
         } else {
