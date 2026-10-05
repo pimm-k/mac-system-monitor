@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-10-05
+
 ### 追加
 - 新しいバージョンが出たら通知センターで知らせるように（同じバージョンは 1 回だけ。クリックでアップデート画面を開く）
   - アプリを開いている間はアプリが 1 時間ごと、閉じている間はバックグラウンド記録が 6 時間ごとに確認
@@ -183,7 +185,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...v2.5.0
 [2.4.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.1...v2.4.2
 [2.4.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.0...v2.4.1
 [2.4.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.3.2...v2.4.0
