@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.7.1] - 2026-10-06
+
 ### 修正
 - アップデート（アプリ内・`build_app.sh --install`）の途中で、バックグラウンド記録が入れ替え中のアプリで起動されてしまい「Code Signature Invalid (Launch Constraint Violation)」で強制終了されることがある問題を修正
   - 入れ替えの前にバックグラウンド記録を止め、入れ替え後に起動し直すように
@@ -212,7 +214,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.1...HEAD
+[2.7.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.4.2...v2.5.0
