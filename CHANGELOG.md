@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.7.2] - 2026-10-06
+
 ### 修正
 - `git pr -m` が、CI・CodeQL（macOS の実行環境の待ち時間がある）が終わる前に、先に終わった Secrets だけを見てマージしてしまうことがある問題を修正。コミットの GitHub Actions がすべて完了・成功するまで待つように
 
@@ -217,7 +219,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.1...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.2...HEAD
+[2.7.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.5.0...v2.6.0
