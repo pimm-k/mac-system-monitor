@@ -10,6 +10,8 @@
 
 ## [Unreleased]
 
+## [2.7.3] - 2026-10-12
+
 ### 修正
 - アプリ内アップデートで「今すぐアップデート」を押すと、アプリが終了せずアップデートが終わらない問題を修正（アップデート画面を閉じてから終了し、終了できない場合も 2 秒後に確実に終了するように）。言語変更時の再起動も同様
 
@@ -222,7 +224,8 @@
 - Hardened Runtime を有効にして署名
 - SECURITY.md（脆弱性の報告方法）を追加
 
-[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.2...HEAD
+[Unreleased]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.3...HEAD
+[2.7.3]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.2...v2.7.3
 [2.7.2]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/pimm-k/mac-system-monitor/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/pimm-k/mac-system-monitor/compare/v2.6.0...v2.7.0
