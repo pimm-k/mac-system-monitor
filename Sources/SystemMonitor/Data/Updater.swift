@@ -127,7 +127,10 @@ final class Updater: ObservableObject {
                 let newApp = try await Self.downloadAndVerify(rel)
                 await MainActor.run { self.state = .installing }
                 try Self.replaceAndRelaunch(current: appURL, with: newApp)
-                await MainActor.run { NSApp.terminate(nil) }
+                await MainActor.run {
+                    self.showSheet = false
+                    AppTermination.quitForRelaunch()
+                }
             } catch {
                 await MainActor.run { self.state = .failed(error.localizedDescription) }
             }

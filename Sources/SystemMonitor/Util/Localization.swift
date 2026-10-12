@@ -127,6 +127,24 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         p.executableURL = URL(fileURLWithPath: "/bin/sh")
         p.arguments = ["-c", "sleep 1; /usr/bin/open \"$0\"", path]
         try? p.run()
+        AppTermination.quitForRelaunch()
+    }
+}
+
+// MARK: - 確実な終了
+
+/// アップデートや言語変更のための再起動で、アプリを確実に終了させる。
+/// シート (アップデート画面など) が開いていると NSApp.terminate が受け付けられず、
+/// アプリが終わらないまま置き換えスクリプトが待ち続けることがあったため、
+/// シートを閉じてから終了し、それでも終わらなければ 2 秒後に強制的に終了する。
+@MainActor
+enum AppTermination {
+    static func quitForRelaunch() {
+        UserDefaults.standard.synchronize()
+        for window in NSApp.windows {
+            for sheet in window.sheets { window.endSheet(sheet) }
+        }
         NSApp.terminate(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { exit(0) }
     }
 }
