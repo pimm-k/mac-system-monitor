@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: CodeQL の初期化
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: swift
           build-mode: manual
@@ -38,6 +38,6 @@ jobs:
         run: swift build
 
       - name: CodeQL で解析
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:swift"
